@@ -1,29 +1,40 @@
-# WinPrint Server (.NET Framework 4.7.2)
+# WinPrint Server
 
-Serwer wydruku zaprojektowany specjalnie dla starszych systemów (Windows 8/8.1, Windows 7) oraz nowszych, rozwiązujący problem zależności UCRT.
-
-## Dlaczego ta wersja?
-
-Poprzednia wersja (.NET Core/10/8) wymagała zainstalowania aktualizacji Universal C Runtime, która często sprawia problemy na starszych tabletach z Windows 8. Ta wersja korzysta z **.NET Framework 4.7.2**, który jest natywnie obsługiwany przez system lub łatwy do doinstalowania i nie wymaga zewnętrznych bibliotek C++.
+Prosty serwer wydruku dla Windows (tablet), umożliwiający drukowanie z urządzeń mobilnych (Android/iOS) poprzez przeglądarkę.
 
 ## Wymagania
 
-- Windows 7, 8, 8.1, 10 lub 11.
-- .NET Framework 4.7.2 (zazwyczaj zainstalowany w systemie, jeśli nie - pobierz ze strony Microsoft).
-- Drukarka zainstalowana w systemie.
-- Przeglądarka PDF (np. Adobe Reader) ustawiona jako domyślna.
+- System operacyjny: Windows 10/11 (Zalecane).
+  - **Uwaga dotycząca Windows 8:** Aplikacja została napisana w .NET 10 zgodnie z życzeniem. .NET 6+ oficjalnie nie wspiera Windows 8. Może być wymagana aktualizacja systemu lub próba uruchomienia na własne ryzyko. Jeśli aplikacja nie uruchomi się na Windows 8, należy skompilować ją pod starszy framework (np. .NET 6 lub Framework 4.8), jednak kod źródłowy jest przygotowany pod najnowsze standardy.
+- Drukarka zainstalowana w systemie (domyślna lub możliwość wyboru).
+- Przeglądarka PDF (np. Adobe Reader) ustawiona jako domyślna (dla drukowania PDF).
 
-## Instrukcja Uruchomienia
+## Instrukcja Publikacji (Single File)
 
-1. Pobierz plik `WinPrintServer.exe` z folderu `bin/Debug/net472/`.
-2. Pobierz folder `wwwroot` i umieść go w tym samym katalogu co plik `.exe`.
-3. Uruchom `WinPrintServer.exe` (zalecane: Uruchom jako Administrator, aby nasłuchiwać na porcie sieciowym).
-   - Jeśli pojawi się błąd "Access Denied" przy starcie serwera, uruchom jako Admin lub wykonaj w CMD:
-     `netsh http add urlacl url=http://+:5000/ user=Wszyscy` (lub nazwa Twojego użytkownika).
-4. Zezwól aplikacji na dostęp w Zaporze Windows (Sieć prywatna).
-5. Otwórz przeglądarkę na telefonie i wejdź na IP tabletu, np. `http://192.168.1.15:5000`.
+Aby wygenerować pojedynczy plik `.exe` do przeniesienia na tablet:
+
+1. Otwórz terminal w folderze projektu.
+2. Uruchom komendę:
+
+```bash
+dotnet publish -c Release -r win-x86 --self-contained -p:PublishSingleFile=true -p:PublishReadyToRun=true
+```
+
+3. Plik wynikowy `WinPrintServer.exe` znajdziesz w katalogu `bin/Release/net10.0/win-x86/publish/`.
+4. Skopiuj ten plik (oraz ewentualnie folder `wwwroot` jeśli nie został wbudowany, choć w trybie default Web SDK pliki statyczne są w embed) na tablet.
+   *Uwaga:* W trybie Single File pliki statyczne webowe (html) są zazwyczaj obsługiwane, ale upewnij się, że `wwwroot` jest obok pliku exe lub skonfigurowany jako zasób wbudowany.
+
+   *Dla pewności w tym projekcie:* Skopiuj zarówno `WinPrintServer.exe` jak i folder `wwwroot` na tablet.
+
+## Uruchomienie
+
+1. Podłącz drukarkę USB do tabletu.
+2. Uruchom `WinPrintServer.exe`.
+3. Zezwól na dostęp w zaporze Windows (sieć prywatna).
+4. Na telefonie wpisz adres IP tabletu i port (domyślnie 5000), np. `http://192.168.1.15:5000`.
 
 ## Funkcje
 
-- Lekki serwer HTTP oparty na `System.Net.HttpListener` (brak ciężkich zależności ASP.NET).
-- Upload i druk plików JPG, PNG, PDF.
+- Upload plików JPG, PNG, BMP, PDF.
+- Podgląd przed wydrukiem.
+- Drukowanie (JPG przez GDI+, PDF przez domyślny systemowy handler).

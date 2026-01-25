@@ -1,27 +1,25 @@
-using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Printing;
-using System.IO;
+using System.Runtime.InteropServices;
 
 namespace WinPrintServer
 {
     public class PrintService
     {
-        private readonly ConsoleLogger _logger;
+        private readonly ILogger<PrintService> _logger;
 
-        public PrintService(ConsoleLogger logger)
+        public PrintService(ILogger<PrintService> logger)
         {
             _logger = logger;
         }
 
         public void Print(string filePath)
         {
-            // Simple OS check - assuming Windows for Framework app mostly, but good to keep.
-            if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 _logger.LogError("Printing is only supported on Windows.");
-               // On Framework 4.7.2 running on Windows, this is always true.
+                throw new PlatformNotSupportedException("Printing is only supported on Windows.");
             }
 
             string extension = Path.GetExtension(filePath).ToLower();
@@ -43,14 +41,14 @@ namespace WinPrintServer
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error printing file {0}", filePath);
+                _logger.LogError(ex, "Error printing file {FilePath}", filePath);
                 throw;
             }
         }
 
         private void PrintPdf(string filePath)
         {
-            _logger.LogInformation("Starting PDF print for: {0}", filePath);
+            _logger.LogInformation("Starting PDF print for: {FilePath}", filePath);
 
             var p = new Process();
             p.StartInfo = new ProcessStartInfo
@@ -62,56 +60,68 @@ namespace WinPrintServer
                 WindowStyle = ProcessWindowStyle.Hidden
             };
 
+            // "printto" allows specifying a printer, but "print" uses default.
+            // The user implies default printer usage or "connected printer".
+            // Using default is safer unless we implement printer selection.
+
             p.Start();
+
+            // Allow some time for the print command to be handed off to the application
+            // Ideally we don't wait indefinitely, but the process might exit immediately after spooling
+            // or stick around (like Acrobat). We won't WaitForExit because it might block if the reader stays open.
         }
 
         private void PrintImage(string filePath)
         {
-            _logger.LogInformation("Starting Image print for: {0}", filePath);
+            _logger.LogInformation("Starting Image print for: {FilePath}", filePath);
 
-            using (var printDoc = new PrintDocument())
+            using var printDoc = new PrintDocument();
+            printDoc.PrintPage += (sender, e) =>
             {
-                printDoc.PrintPage += (sender, e) =>
+                using var image = Image.FromFile(filePath);
+
+                // Logic to fit image to page
+                RectangleF m = e.MarginBounds;
+                RectangleF p = e.PageBounds;
+
+                // Check orientation
+                if (image.Width > image.Height)
                 {
-                    using (var image = Image.FromFile(filePath))
-                    {
-                        // Logic to fit image to page
-                        RectangleF m = e.MarginBounds;
+                    // Image is Landscape. If page is Portrait, rotate image logic or rotate page setting?
+                    // Easiest is to just fit inside the margins.
+                    // But if we want to maximize usage, we might want to rotate the PageSettings.
+                    printDoc.DefaultPageSettings.Landscape = true;
+                    // Re-read margins after changing orientation
+                     m = e.MarginBounds;
+                }
 
-                        // Check orientation
-                        if (image.Width > image.Height)
-                        {
-                            printDoc.DefaultPageSettings.Landscape = true;
-                            m = e.MarginBounds; // Re-read
-                        }
+                // Calculate scaling
+                float imageRatio = (float)image.Width / image.Height;
+                float containerRatio = m.Width / m.Height;
 
-                        // Calculate scaling
-                        float imageRatio = (float)image.Width / image.Height;
-                        float containerRatio = m.Width / m.Height;
+                float width, height;
 
-                        float width, height;
+                if (imageRatio >= containerRatio)
+                {
+                    // Image is wider than container relative to height
+                    width = m.Width;
+                    height = width / imageRatio;
+                }
+                else
+                {
+                    // Image is taller
+                    height = m.Height;
+                    width = height * imageRatio;
+                }
 
-                        if (imageRatio >= containerRatio)
-                        {
-                            width = m.Width;
-                            height = width / imageRatio;
-                        }
-                        else
-                        {
-                            height = m.Height;
-                            width = height * imageRatio;
-                        }
+                // Center image
+                float x = m.Left + (m.Width - width) / 2;
+                float y = m.Top + (m.Height - height) / 2;
 
-                        // Center image
-                        float x = m.Left + (m.Width - width) / 2;
-                        float y = m.Top + (m.Height - height) / 2;
+                e.Graphics.DrawImage(image, x, y, width, height);
+            };
 
-                        e.Graphics.DrawImage(image, x, y, width, height);
-                    }
-                };
-
-                printDoc.Print();
-            }
+            printDoc.Print();
         }
     }
 }
