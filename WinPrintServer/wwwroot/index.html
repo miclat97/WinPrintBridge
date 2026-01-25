@@ -51,15 +51,18 @@
         if (input.files.length === 0) return;
 
         const file = input.files[0];
-        const formData = new FormData();
-        formData.append('file', file);
+        // Send raw binary instead of FormData to simplify server parsing
+        const url = '/api/upload?filename=' + encodeURIComponent(file.name);
 
         document.querySelector('.upload-area p').innerText = "Wysyłanie...";
 
         try {
-            const response = await fetch('/api/upload', {
+            const response = await fetch(url, {
                 method: 'POST',
-                body: formData
+                headers: {
+                    'Content-Type': 'application/octet-stream'
+                },
+                body: file
             });
 
             if (!response.ok) throw new Error('Błąd wysyłania');
