@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WinPrint Server</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 90%; max-width: 500px; text-align: center; }
+        h1 { margin-bottom: 1.5rem; color: #333; }
+        .upload-area { border: 2px dashed #ccc; padding: 2rem; border-radius: 8px; cursor: pointer; transition: 0.3s; margin-bottom: 1rem; }
+        .upload-area:hover { border-color: #0078d4; background: #f0f8ff; }
+        input[type="file"] { display: none; }
+        .btn { background: #0078d4; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-size: 1.1rem; cursor: pointer; width: 100%; margin-top: 1rem; }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
+        .btn-secondary { background: #666; margin-top: 0.5rem; }
+        #preview-container { display: none; margin-top: 1rem; }
+        #preview-img { max-width: 100%; max-height: 300px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .hidden { display: none; }
+        .status { margin-top: 1rem; font-weight: bold; color: #333; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+
+<div class="container" id="upload-screen">
+    <h1>🖨️ WinPrint Server</h1>
+    <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+        <p>Kliknij tutaj, aby wybrać plik<br>(JPG, PNG, PDF)</p>
+        <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.pdf,.bmp" onchange="uploadFile()">
+    </div>
+</div>
+
+<div class="container hidden" id="preview-screen">
+    <h1>Podgląd</h1>
+    <div id="preview-content">
+        <img id="preview-img" src="" alt="Podgląd">
+        <p id="file-name" style="margin-top: 0.5rem; color: #666;"></p>
+    </div>
+    <button class="btn" id="printBtn" onclick="printFile()">🖨️ DRUKUJ</button>
+    <button class="btn btn-secondary" onclick="reset()">Anuluj</button>
+    <p class="status" id="status-msg"></p>
+</div>
+
+<script>
+    let currentFileId = null;
+
+    async function uploadFile() {
+        const input = document.getElementById('fileInput');
+        if (input.files.length === 0) return;
+
+        const file = input.files[0];
+        const formData = new FormData();
+        formData.append('file', file);
+
+        document.querySelector('.upload-area p').innerText = "Wysyłanie...";
+
+        try {
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) throw new Error('Błąd wysyłania');
+
+            const data = await response.json();
+            currentFileId = data.id;
+
+            showPreview(data.id, data.filename, data.type);
+        } catch (err) {
+            alert("Wystąpił błąd podczas wysyłania pliku: " + err.message);
+            reset();
+        }
+    }
+
+    function showPreview(id, filename, type) {
+        document.getElementById('upload-screen').classList.add('hidden');
+        document.getElementById('preview-screen').classList.remove('hidden');
+        document.getElementById('file-name').innerText = filename;
+        document.getElementById('status-msg').innerText = "";
+        document.getElementById('printBtn').disabled = false;
+
+        const img = document.getElementById('preview-img');
+        if (type.toLowerCase() === '.pdf') {
+            // For PDF, we show a generic icon or rely on native embed.
+            // Embedding PDF in img tag works in some browsers but better to show an icon or iframe.
+            // Simplified: Just an icon for now.
+            img.src = "https://upload.wikimedia.org/wikipedia/commons/8/87/PDF_file_icon.svg";
+            img.style.height = "100px";
+            img.style.width = "auto";
+        } else {
+            img.src = `/api/preview/${id}`;
+            img.style.height = ""; // Auto
+        }
+    }
+
+    async function printFile() {
+        if (!currentFileId) return;
+
+        const btn = document.getElementById('printBtn');
+        const status = document.getElementById('status-msg');
+
+        btn.disabled = true;
+        btn.innerText = "Drukowanie...";
+        status.innerText = "Wysyłanie na drukarkę...";
+        status.className = "status";
+
+        try {
+            const response = await fetch(`/api/print/${currentFileId}`, {
+                method: 'POST'
+            });
+
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(errText || 'Błąd druku');
+            }
+
+            status.innerText = "✅ Wysłano na drukarkę!";
+            status.classList.add("success");
+
+            setTimeout(() => {
+                reset();
+            }, 3000);
+
+        } catch (err) {
+            status.innerText = "❌ Błąd: " + err.message;
+            status.classList.add("error");
+            btn.disabled = false;
+            btn.innerText = "🖨️ DRUKUJ";
+        }
+    }
+
+    function reset() {
+        document.getElementById('fileInput').value = '';
+        document.querySelector('.upload-area p').innerHTML = 'Kliknij tutaj, aby wybrać plik<br>(JPG, PNG, PDF)';
+        document.getElementById('upload-screen').classList.remove('hidden');
+        document.getElementById('preview-screen').classList.add('hidden');
+        currentFileId = null;
+    }
+</script>
+
+</body>
+</html>
