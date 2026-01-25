@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Printing;
 using System.Runtime.InteropServices;
+using PdfiumViewer;
 
 namespace WinPrintServer
 {
@@ -50,25 +51,11 @@ namespace WinPrintServer
         {
             _logger.LogInformation("Starting PDF print for: {FilePath}", filePath);
 
-            var p = new Process();
-            p.StartInfo = new ProcessStartInfo
-            {
-                FileName = filePath,
-                Verb = "print",
-                UseShellExecute = true,
-                CreateNoWindow = true,
-                WindowStyle = ProcessWindowStyle.Hidden
-            };
+            using var document = PdfDocument.Load(filePath);
+            using var printDocument = document.CreatePrintDocument();
+            printDocument.Print();
 
-            // "printto" allows specifying a printer, but "print" uses default.
-            // The user implies default printer usage or "connected printer".
-            // Using default is safer unless we implement printer selection.
-
-            p.Start();
-
-            // Allow some time for the print command to be handed off to the application
-            // Ideally we don't wait indefinitely, but the process might exit immediately after spooling
-            // or stick around (like Acrobat). We won't WaitForExit because it might block if the reader stays open.
+            _logger.LogInformation("PDF print job sent to default printer.");
         }
 
         private void PrintImage(string filePath)
