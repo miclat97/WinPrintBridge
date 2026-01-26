@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using WinPrintServer;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using System.Diagnostics;
+using System.ServiceProcess;
+using System.Runtime.Versioning;
 
 var options = new WebApplicationOptions
 {
@@ -10,6 +12,95 @@ var options = new WebApplicationOptions
     ContentRootPath = WindowsServiceHelpers.IsWindowsService()
                       ? AppContext.BaseDirectory : default
 };
+
+// Check if running as service or console
+if (!WindowsServiceHelpers.IsWindowsService() && OperatingSystem.IsWindows())
+{
+    try
+    {
+        // Try to check if service is installed
+        // We use a try-catch because on some non-admin contexts this might fail,
+        // or if we are not on Windows (though we checked IsWindows).
+        const string serviceName = "WinPrintServer";
+        bool serviceExists = false;
+        try
+        {
+            using var sc = new ServiceController(serviceName);
+            serviceExists = (sc.Status != ServiceControllerStatus.Stopped && sc.Status != ServiceControllerStatus.Running && sc.Status != ServiceControllerStatus.Paused);
+            // Actually accessing Status throws if service doesn't exist
+            var s = sc.Status;
+            serviceExists = true;
+        }
+        catch
+        {
+            serviceExists = false;
+        }
+
+        if (!serviceExists)
+        {
+            Console.WriteLine("Usługa WinPrintServer nie jest zainstalowana.");
+            Console.WriteLine("Czy chcesz ją zainstalować i skonfigurować do autostartu? (T/N)");
+            var key = Console.ReadKey();
+            Console.WriteLine();
+
+            if (key.Key == ConsoleKey.T || key.Key == ConsoleKey.Y)
+            {
+                var exePath = Process.GetCurrentProcess().MainModule?.FileName;
+                if (!string.IsNullOrEmpty(exePath))
+                {
+                    // Remove extension .dll if it's there (running with dotnet command) and ensure .exe
+                    // But usually MainModule.FileName points to the host exe
+                    if (exePath.EndsWith(".dll")) exePath = exePath.Replace(".dll", ".exe");
+
+                    Console.WriteLine($"Instalowanie usługi z: {exePath}");
+
+                    // Create service
+                    var createProcess = Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "sc.exe",
+                        Arguments = $"create {serviceName} binPath= \"{exePath}\" start= auto",
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true
+                    });
+                    createProcess?.WaitForExit();
+                    Console.WriteLine(createProcess?.StandardOutput.ReadToEnd());
+
+                    if (createProcess?.ExitCode == 0)
+                    {
+                        Console.WriteLine("Usługa została zainstalowana.");
+                        Console.WriteLine("Czy chcesz ją uruchomić teraz? (T/N)");
+                        var startKey = Console.ReadKey();
+                        Console.WriteLine();
+
+                        if (startKey.Key == ConsoleKey.T || startKey.Key == ConsoleKey.Y)
+                        {
+                            var startProcess = Process.Start(new ProcessStartInfo
+                            {
+                                FileName = "sc.exe",
+                                Arguments = $"start {serviceName}",
+                                UseShellExecute = false,
+                                RedirectStandardOutput = true
+                            });
+                            startProcess?.WaitForExit();
+                            Console.WriteLine(startProcess?.StandardOutput.ReadToEnd());
+                        }
+
+                        Console.WriteLine("Zakończono konfigurację. Aplikacja zakończy działanie.");
+                        return;
+                    }
+                    else
+                    {
+                         Console.WriteLine("Błąd podczas instalacji usługi. Upewnij się, że uruchamiasz jako Administrator.");
+                    }
+                }
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Błąd podczas sprawdzania/instalacji usługi: {ex.Message}");
+    }
+}
 
 var builder = WebApplication.CreateBuilder(options);
 
