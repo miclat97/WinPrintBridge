@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WinPrint Server</title>
+    <title>WinPrintServer</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 1rem; box-sizing: border-box; }
         .container { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 500px; text-align: center; margin-bottom: 1rem; }
@@ -29,26 +29,26 @@
 <div class="container" id="upload-screen">
     <h1>🖨️ WinPrint Server</h1>
     <div class="upload-area" onclick="document.getElementById('fileInput').click()">
-        <p>Kliknij tutaj, aby wybrać plik<br>(JPG, PNG, PDF)</p>
+        <p>Select file to print<br>(JPG, PNG, PDF)</p>
         <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.pdf,.bmp" onchange="uploadFile()">
     </div>
 </div>
 
 <div class="container hidden" id="preview-screen">
-    <h1>Podgląd</h1>
+    <h1>Preview</h1>
     <div id="preview-content">
-        <img id="preview-img" src="" alt="Podgląd">
+        <img id="preview-img" src="" alt="Preview">
         <p id="file-name" style="margin-top: 0.5rem; color: #666;"></p>
     </div>
-    <button class="btn" id="printBtn" onclick="printFile()">🖨️ DRUKUJ</button>
-    <button class="btn btn-secondary" onclick="reset()">Anuluj</button>
+    <button class="btn" id="printBtn" onclick="printFile()">🖨️ PRINT</button>
+    <button class="btn btn-secondary" onclick="reset()">CANCEL</button>
     <p class="status" id="status-msg"></p>
 </div>
 
 <div class="container">
-    <h3>⚙️ Administracja</h3>
-    <button class="btn btn-danger" onclick="cleanSpooler()">Zaawansowane wymuszenie wyczyszczenia kolejki</button>
-    <button class="btn btn-danger" onclick="restartServer()">Wymuś restart serwera i wyczyszczenie kolejki</button>
+    <h3>⚙️ Management</h3>
+    <button class="btn btn-danger" onclick="cleanSpooler()">Force clean spooler queue and restart spooler service</button>
+    <button class="btn btn-danger" onclick="restartServer()">Force clean spooler queue and restart server machine</button>
 </div>
 
 <script>
@@ -62,7 +62,7 @@
         const formData = new FormData();
         formData.append('file', file);
 
-        document.querySelector('.upload-area p').innerText = "Wysyłanie...";
+        document.querySelector('.upload-area p').innerText = "Uploading...";
 
         try {
             const response = await fetch('/api/upload', {
@@ -70,14 +70,14 @@
                 body: formData
             });
 
-            if (!response.ok) throw new Error('Błąd wysyłania');
+            if (!response.ok) throw new Error('Uploading error');
 
             const data = await response.json();
             currentFileId = data.id;
 
             showPreview(data.id, data.filename, data.type);
         } catch (err) {
-            alert("Wystąpił błąd podczas wysyłania pliku: " + err.message);
+            alert("Error: " + err.message);
             reset();
         }
     }
@@ -91,7 +91,7 @@
 
         const img = document.getElementById('preview-img');
         if (type.toLowerCase() === '.pdf') {
-            img.src = "https://upload.wikimedia.org/wikipedia/commons/8/87/PDF_file_icon.svg";
+            img.src = "PDF_file_icon.svg";
             img.style.height = "100px";
             img.style.width = "auto";
         } else {
@@ -107,8 +107,8 @@
         const status = document.getElementById('status-msg');
 
         btn.disabled = true;
-        btn.innerText = "Drukowanie...";
-        status.innerText = "Wysyłanie na drukarkę...";
+        btn.innerText = "Printing...";
+        status.innerText = "Sending to printer...";
         status.className = "status";
 
         try {
@@ -118,10 +118,10 @@
 
             if (!response.ok) {
                 const errText = await response.text();
-                throw new Error(errText || 'Błąd druku');
+                throw new Error(errText || 'Error');
             }
 
-            status.innerText = "✅ Wysłano na drukarkę!";
+            status.innerText = "✅ Sent to printer successfully!";
             status.classList.add("success");
 
             setTimeout(() => {
@@ -129,23 +129,23 @@
             }, 3000);
 
         } catch (err) {
-            status.innerText = "❌ Błąd: " + err.message;
+            status.innerText = "❌ Error: " + err.message;
             status.classList.add("error");
             btn.disabled = false;
-            btn.innerText = "🖨️ DRUKUJ";
+            btn.innerText = "🖨️ PRINT";
         }
     }
 
     function reset() {
         document.getElementById('fileInput').value = '';
-        document.querySelector('.upload-area p').innerHTML = 'Kliknij tutaj, aby wybrać plik<br>(JPG, PNG, PDF)';
+        document.querySelector('.upload-area p').innerHTML = 'Select file to print<br>(JPG, PNG, PDF)';
         document.getElementById('upload-screen').classList.remove('hidden');
         document.getElementById('preview-screen').classList.add('hidden');
         currentFileId = null;
     }
 
     async function cleanSpooler() {
-        if (!confirm("Czy na pewno chcesz wymusić wyczyszczenie kolejki wydruku? To zatrzyma usługę bufora.")) return;
+        if (!confirm("Are you sure to force clean print queue? It will flush all blocking and waiting printing documents.")) return;
 
         try {
             const response = await fetch('/api/admin/clean-spooler', { method: 'POST' });
@@ -154,15 +154,15 @@
                 alert(data.message);
             } else {
                 const err = await response.json();
-                alert("Błąd: " + (err.detail || err.title || "Nieznany błąd"));
+                alert("Error: " + (err.detail || err.title || "Error"));
             }
         } catch (err) {
-            alert("Błąd połączenia: " + err.message);
+            alert("Connection error: " + err.message);
         }
     }
 
     async function restartServer() {
-        if (!confirm("Czy na pewno chcesz zrestartować serwer? To przerwie działanie wszystkich usług.")) return;
+        if (!confirm("Are you sure want to restart server? It will clean spooler queue (like option above) and reboot Windows.")) return;
 
         try {
             const response = await fetch('/api/admin/restart-server', { method: 'POST' });
@@ -171,10 +171,10 @@
                 alert(data.message);
             } else {
                 const err = await response.json();
-                alert("Błąd: " + (err.detail || err.title || "Nieznany błąd"));
+                alert("Error: " + (err.detail || err.title || "Error"));
             }
         } catch (err) {
-            alert("Błąd połączenia: " + err.message);
+            alert("Connection error: " + err.message);
         }
     }
 </script>

@@ -1,10 +1,8 @@
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using WinPrintServer;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using System.Diagnostics;
 using System.ServiceProcess;
-using System.Runtime.Versioning;
+using WinPrintServer;
 
 var options = new WebApplicationOptions
 {
@@ -38,8 +36,8 @@ if (!WindowsServiceHelpers.IsWindowsService() && OperatingSystem.IsWindows())
 
         if (!serviceExists)
         {
-            Console.WriteLine("Usługa WinPrintServer nie jest zainstalowana.");
-            Console.WriteLine("Czy chcesz ją zainstalować i skonfigurować do autostartu? (T/N)");
+            Console.WriteLine("WinPrintServer isn't installed.");
+            Console.WriteLine("Do you want to install and configure service? (Y/N)");
             var key = Console.ReadKey();
             Console.WriteLine();
 
@@ -52,7 +50,7 @@ if (!WindowsServiceHelpers.IsWindowsService() && OperatingSystem.IsWindows())
                     // But usually MainModule.FileName points to the host exe
                     if (exePath.EndsWith(".dll")) exePath = exePath.Replace(".dll", ".exe");
 
-                    Console.WriteLine($"Instalowanie usługi z: {exePath}");
+                    Console.WriteLine($"Installing service: {exePath}");
 
                     // Create service
                     var createProcess = Process.Start(new ProcessStartInfo
@@ -67,8 +65,8 @@ if (!WindowsServiceHelpers.IsWindowsService() && OperatingSystem.IsWindows())
 
                     if (createProcess?.ExitCode == 0)
                     {
-                        Console.WriteLine("Usługa została zainstalowana.");
-                        Console.WriteLine("Czy chcesz ją uruchomić teraz? (T/N)");
+                        Console.WriteLine("Service installed.");
+                        Console.WriteLine("Do you want to start it now? (Y/N)");
                         var startKey = Console.ReadKey();
                         Console.WriteLine();
 
@@ -85,12 +83,12 @@ if (!WindowsServiceHelpers.IsWindowsService() && OperatingSystem.IsWindows())
                             Console.WriteLine(startProcess?.StandardOutput.ReadToEnd());
                         }
 
-                        Console.WriteLine("Zakończono konfigurację. Aplikacja zakończy działanie.");
+                        Console.WriteLine("Installed and configured service successfully.");
                         return;
                     }
                     else
                     {
-                         Console.WriteLine("Błąd podczas instalacji usługi. Upewnij się, że uruchamiasz jako Administrator.");
+                        Console.WriteLine("Error when installing service. Make sure to run this app as administrator");
                     }
                 }
             }
@@ -98,7 +96,7 @@ if (!WindowsServiceHelpers.IsWindowsService() && OperatingSystem.IsWindows())
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Błąd podczas sprawdzania/instalacji usługi: {ex.Message}");
+        Console.WriteLine($"Error: {ex.Message}");
     }
 }
 
@@ -121,7 +119,7 @@ app.UseDefaultFiles();
 app.UseStaticFiles();
 
 // Ensure upload directory exists
-var uploadDir = app.Configuration.GetValue<string>("PrintServer:UploadDirectory", @"C:\WinPrinterBridge\");
+var uploadDir = app.Configuration.GetValue<string>("PrintServer:UploadDirectory", @"C:\WinPrintBridge\");
 if (string.IsNullOrWhiteSpace(uploadDir))
 {
     // Fallback to local 'uploads' folder if config is explicitly empty but not null
@@ -226,11 +224,11 @@ app.MapPost("/api/admin/clean-spooler", () =>
         RunPowerShellCommand("Stop-Service -Name Spooler -Force");
         RunPowerShellCommand("Remove-Item \"C:\\Windows\\System32\\spool\\PRINTERS\\*\" -Force -Recurse");
         RunPowerShellCommand("Start-Service Spooler");
-        return Results.Ok(new { message = "Kolejka wydruku wyczyszczona (Spooler zrestartowany)." });
+        return Results.Ok(new { message = "Deleted all documents from printing queue. Spooler service restarted." });
     }
     catch (Exception ex)
     {
-        return Results.Problem($"Błąd: {ex.Message}");
+        return Results.Problem($"Error: {ex.Message}");
     }
 });
 
@@ -245,11 +243,11 @@ app.MapPost("/api/admin/restart-server", () =>
         // Restart machine
         Process.Start("shutdown", "/r /t 0");
 
-        return Results.Ok(new { message = "Serwer jest restartowany..." });
+        return Results.Ok(new { message = "Deleting all documents from queue and resatrting Windows..." });
     }
     catch (Exception ex)
     {
-        return Results.Problem($"Błąd restartu: {ex.Message}");
+        return Results.Problem($"Error: {ex.Message}");
     }
 });
 
