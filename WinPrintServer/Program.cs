@@ -30,7 +30,13 @@ app.UseDefaultFiles();
 app.UseStaticFiles();
 
 // Ensure upload directory exists
-var uploadDir = Path.Combine(app.Environment.ContentRootPath, "uploads");
+var uploadDir = app.Configuration.GetValue<string>("PrintServer:UploadDirectory", @"C:\WinPrinterBridge\");
+if (string.IsNullOrWhiteSpace(uploadDir))
+{
+    // Fallback to local 'uploads' folder if config is explicitly empty but not null
+    uploadDir = Path.Combine(app.Environment.ContentRootPath, "uploads");
+}
+
 if (!Directory.Exists(uploadDir))
 {
     Directory.CreateDirectory(uploadDir);
