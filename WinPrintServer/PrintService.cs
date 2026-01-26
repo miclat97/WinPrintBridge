@@ -9,10 +9,17 @@ namespace WinPrintServer
     public class PrintService
     {
         private readonly ILogger<PrintService> _logger;
+        private readonly IConfiguration _configuration;
 
-        public PrintService(ILogger<PrintService> logger)
+        public PrintService(ILogger<PrintService> logger, IConfiguration configuration)
         {
             _logger = logger;
+            _configuration = configuration;
+        }
+
+        private string? GetPrinterName()
+        {
+            return _configuration["PrintServer:PrinterName"];
         }
 
         public void Print(string filePath)
@@ -56,6 +63,13 @@ namespace WinPrintServer
                 using var document = PdfDocument.Load(filePath);
                 using var printDocument = document.CreatePrintDocument();
                 printDocument.PrintController = new StandardPrintController();
+
+                var printerName = GetPrinterName();
+                if (!string.IsNullOrEmpty(printerName))
+                {
+                    printDocument.PrinterSettings.PrinterName = printerName;
+                }
+
                 printDocument.Print();
             }
             catch (Exception ex)
@@ -70,6 +84,13 @@ namespace WinPrintServer
             _logger.LogInformation("Starting Image print for: {FilePath}", filePath);
 
             using var printDoc = new PrintDocument();
+
+            var printerName = GetPrinterName();
+            if (!string.IsNullOrEmpty(printerName))
+            {
+                printDoc.PrinterSettings.PrinterName = printerName;
+            }
+
             printDoc.PrintPage += (sender, e) =>
             {
                 using var image = Image.FromFile(filePath);
@@ -112,7 +133,7 @@ namespace WinPrintServer
                 float x = m.Left + (m.Width - width) / 2;
                 float y = m.Top + (m.Height - height) / 2;
 
-                e.Graphics.DrawImage(image, x, y, width, height);
+                e.Graphics?.DrawImage(image, x, y, width, height);
             };
 
             printDoc.Print();
