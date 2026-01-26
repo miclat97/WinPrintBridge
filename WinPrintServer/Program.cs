@@ -1,8 +1,24 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using WinPrintServer;
+using Microsoft.Extensions.Hosting.WindowsServices;
+using System.Diagnostics;
 
-var builder = WebApplication.CreateBuilder(args);
+var options = new WebApplicationOptions
+{
+    Args = args,
+    ContentRootPath = WindowsServiceHelpers.IsWindowsService()
+                      ? AppContext.BaseDirectory : default
+};
+
+var builder = WebApplication.CreateBuilder(options);
+
+// Configure as Windows Service
+builder.Host.UseWindowsService();
+
+// Read Port from configuration
+var port = builder.Configuration.GetValue<int>("PrintServer:Port", 5000);
+builder.WebHost.UseUrls($"http://*:{port}");
 
 // Add services to the container.
 builder.Services.AddSingleton<PrintService>();
@@ -77,6 +93,66 @@ app.MapPost("/api/print/{id}", (string id, [FromServices] PrintService printServ
     catch (Exception ex)
     {
         return Results.Problem(ex.Message);
+    }
+});
+
+// Admin endpoints
+void RunPowerShellCommand(string command)
+{
+    var startInfo = new ProcessStartInfo
+    {
+        FileName = "powershell.exe",
+        Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{command}\"",
+        RedirectStandardOutput = true,
+        RedirectStandardError = true,
+        UseShellExecute = false,
+        CreateNoWindow = true
+    };
+
+    using var process = Process.Start(startInfo);
+    if (process == null) return;
+
+    process.WaitForExit();
+
+    if (process.ExitCode != 0)
+    {
+        string error = process.StandardError.ReadToEnd();
+        // Log error? For now just throw to return 500
+        throw new Exception($"Command failed: {command}. Error: {error}");
+    }
+}
+
+app.MapPost("/api/admin/clean-spooler", () =>
+{
+    try
+    {
+        RunPowerShellCommand("Stop-Service -Name Spooler -Force");
+        RunPowerShellCommand("Remove-Item \"C:\\Windows\\System32\\spool\\PRINTERS\\*\" -Force -Recurse");
+        RunPowerShellCommand("Start-Service Spooler");
+        return Results.Ok(new { message = "Kolejka wydruku wyczyszczona (Spooler zrestartowany)." });
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Błąd: {ex.Message}");
+    }
+});
+
+app.MapPost("/api/admin/restart-server", () =>
+{
+    try
+    {
+        RunPowerShellCommand("Stop-Service -Name Spooler -Force");
+        RunPowerShellCommand("Remove-Item \"C:\\Windows\\System32\\spool\\PRINTERS\\*\" -Force -Recurse");
+        RunPowerShellCommand("Start-Service Spooler");
+
+        // Restart machine
+        Process.Start("shutdown", "/r /t 0");
+
+        return Results.Ok(new { message = "Serwer jest restartowany..." });
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Błąd restartu: {ex.Message}");
     }
 });
 
