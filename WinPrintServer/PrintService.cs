@@ -1,10 +1,8 @@
-using System.Diagnostics;
-using System.Drawing;
+using PdfiumViewer;
 using System.Drawing.Printing;
 using System.Runtime.InteropServices;
-using PdfiumViewer;
 
-namespace WinPrintServer
+namespace WinPrintBridge
 {
     public class PrintService
     {
@@ -107,7 +105,7 @@ namespace WinPrintServer
                     // But if we want to maximize usage, we might want to rotate the PageSettings.
                     printDoc.DefaultPageSettings.Landscape = true;
                     // Re-read margins after changing orientation
-                     m = e.MarginBounds;
+                    m = e.MarginBounds;
                 }
 
                 // Calculate scaling

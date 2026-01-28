@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WinPrintServer</title>
+    <title>WinPrintBridge</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 1rem; box-sizing: border-box; }
         .container { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 500px; text-align: center; margin-bottom: 1rem; }
@@ -27,7 +27,7 @@
 <body>
 
 <div class="container" id="upload-screen">
-    <h1>🖨️ WinPrint Server</h1>
+    <h1>🖨️ WinPrintBridge</h1>
     <div class="upload-area" onclick="document.getElementById('fileInput').click()">
         <p>Select file to print<br>(JPG, PNG, PDF)</p>
         <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.pdf,.bmp" onchange="uploadFile()">
@@ -47,8 +47,8 @@
 
 <div class="container">
     <h3>⚙️ Management</h3>
-    <button class="btn btn-danger" onclick="cleanSpooler()">Force clean spooler queue and restart spooler service</button>
-    <button class="btn btn-danger" onclick="restartServer()">Force clean spooler queue and restart server machine</button>
+    <button class="btn btn-danger" onclick="cleanSpooler()">Clean print queue</button>
+    <button class="btn btn-danger" onclick="restartServer()">Clean print queue and reboot Windows</button>
 </div>
 
 <script>
@@ -91,7 +91,7 @@
 
         const img = document.getElementById('preview-img');
         if (type.toLowerCase() === '.pdf') {
-            img.src = "PDF_file_icon.svg";
+            img.src = "/PDF_file_icon.svg";
             img.style.height = "100px";
             img.style.width = "auto";
         } else {

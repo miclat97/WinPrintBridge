@@ -1,4 +1,4 @@
-# WinPrint Server
+# WinPrintBridge
 
 Prosty serwer wydruku dla Windows (tablet), umożliwiający drukowanie z urządzeń mobilnych (Android/iOS) poprzez przeglądarkę.
 
@@ -20,16 +20,16 @@ Aby wygenerować pojedynczy plik `.exe` do przeniesienia na tablet:
 dotnet publish -c Release -r win-x86 --self-contained -p:PublishSingleFile=true -p:PublishReadyToRun=true
 ```
 
-3. Plik wynikowy `WinPrintServer.exe` znajdziesz w katalogu `bin/Release/net10.0/win-x86/publish/`.
+3. Plik wynikowy `WinPrintBridge.exe` znajdziesz w katalogu `bin/Release/net10.0/win-x86/publish/`.
 4. Skopiuj ten plik (oraz ewentualnie folder `wwwroot` jeśli nie został wbudowany, choć w trybie default Web SDK pliki statyczne są w embed) na tablet.
    *Uwaga:* W trybie Single File pliki statyczne webowe (html) są zazwyczaj obsługiwane, ale upewnij się, że `wwwroot` jest obok pliku exe lub skonfigurowany jako zasób wbudowany.
 
-   *Dla pewności w tym projekcie:* Skopiuj zarówno `WinPrintServer.exe` jak i folder `wwwroot` na tablet.
+   *Dla pewności w tym projekcie:* Skopiuj zarówno `WinPrintBridge.exe` jak i folder `wwwroot` na tablet.
 
 ## Uruchomienie
 
 1. Podłącz drukarkę USB do tabletu.
-2. Uruchom `WinPrintServer.exe`.
+2. Uruchom `WinPrintBridge.exe`.
 3. Zezwól na dostęp w zaporze Windows (sieć prywatna).
 4. Na telefonie wpisz adres IP tabletu i port (domyślnie 5000), np. `http://192.168.1.15:5000`.
 

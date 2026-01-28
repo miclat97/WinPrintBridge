@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using System.Diagnostics;
 using System.ServiceProcess;
-using WinPrintServer;
+using WinPrintBridge;
 
 var options = new WebApplicationOptions
 {
@@ -19,7 +19,7 @@ if (!WindowsServiceHelpers.IsWindowsService() && OperatingSystem.IsWindows())
         // Try to check if service is installed
         // We use a try-catch because on some non-admin contexts this might fail,
         // or if we are not on Windows (though we checked IsWindows).
-        const string serviceName = "WinPrintServer";
+        const string serviceName = "WinPrintBridge";
         bool serviceExists = false;
         try
         {
@@ -36,7 +36,7 @@ if (!WindowsServiceHelpers.IsWindowsService() && OperatingSystem.IsWindows())
 
         if (!serviceExists)
         {
-            Console.WriteLine("WinPrintServer isn't installed.");
+            Console.WriteLine("WinPrintBridge isn't installed.");
             Console.WriteLine("Do you want to install and configure service? (Y/N)");
             var key = Console.ReadKey();
             Console.WriteLine();
