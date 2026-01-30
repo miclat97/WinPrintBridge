@@ -4,180 +4,365 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WinPrintBridge</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0078d4">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 1rem; box-sizing: border-box; }
-        .container { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 500px; text-align: center; margin-bottom: 1rem; }
-        h1 { margin-bottom: 1.5rem; color: #333; }
-        h3 { margin-bottom: 1rem; color: #555; font-size: 1.2rem; }
-        .upload-area { border: 2px dashed #ccc; padding: 2rem; border-radius: 8px; cursor: pointer; transition: 0.3s; margin-bottom: 1rem; }
-        .upload-area:hover { border-color: #0078d4; background: #f0f8ff; }
+        :root { --primary: #0078d4; --bg: #f0f2f5; --card: #fff; --text: #333; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 1rem; box-sizing: border-box; color: var(--text); }
+        .container { background: var(--card); padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 600px; text-align: center; margin-bottom: 1.5rem; transition: all 0.3s ease; }
+        h1 { margin: 0 0 1.5rem 0; color: var(--primary); font-size: 1.8rem; }
+        h2 { margin: 0 0 1rem 0; color: #555; font-size: 1.4rem; }
+        h3 { margin: 0 0 1rem 0; color: #555; font-size: 1.2rem; }
+
+        .upload-area { border: 2px dashed #ccc; padding: 3rem 1rem; border-radius: 8px; cursor: pointer; transition: 0.2s; margin-bottom: 1rem; position: relative; }
+        .upload-area:hover, .upload-area.dragover { border-color: var(--primary); background: #f0f8ff; }
+        .upload-area p { margin: 0; font-size: 1.1rem; color: #666; pointer-events: none; }
         input[type="file"] { display: none; }
-        .btn { background: #0078d4; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-size: 1.1rem; cursor: pointer; width: 100%; margin-top: 1rem; }
+
+        .btn { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; width: 100%; font-weight: 600; margin-top: 1rem; transition: background 0.2s; }
+        .btn:hover { filter: brightness(1.1); }
         .btn:disabled { background: #ccc; cursor: not-allowed; }
-        .btn-secondary { background: #666; margin-top: 0.5rem; }
-        .btn-danger { background: #d9534f; margin-top: 0.5rem; font-size: 0.9rem; }
-        #preview-container { display: none; margin-top: 1rem; }
-        #preview-img { max-width: 100%; max-height: 300px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .hidden { display: none; }
-        .status { margin-top: 1rem; font-weight: bold; color: #333; }
-        .error { color: red; }
-        .success { color: green; }
+        .btn-secondary { background: #666; }
+        .btn-danger { background: #d9534f; }
+        .btn-icon { width: auto; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+
+        .controls-row { display: flex; gap: 10px; justify-content: center; margin: 1rem 0; align-items: center; }
+        .icon-btn { background: #eee; border: none; padding: 10px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+        .icon-btn:hover { background: #ddd; }
+
+        .preview-box { margin: 1rem 0; padding: 10px; background: #fafafa; border-radius: 8px; overflow: hidden; position: relative; min-height: 200px; display: flex; align-items: center; justify-content: center; }
+        #preview-img { max-width: 100%; max-height: 400px; transition: transform 0.3s ease; transform-origin: center center; }
+
+        .input-group { margin: 1rem 0; text-align: left; }
+        .input-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.9rem; }
+        .input-group input[type="text"], .input-group input[type="number"], .input-group input[type="password"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 1rem; }
+        .checkbox-group { display: flex; align-items: center; gap: 10px; margin: 1rem 0; justify-content: center; }
+        .checkbox-group input { width: 20px; height: 20px; cursor: pointer; }
+        .checkbox-group label { cursor: pointer; }
+
+        .hidden { display: none !important; }
+        .status { margin-top: 1rem; font-weight: bold; min-height: 1.5em; }
+        .error { color: #d9534f; }
+        .success { color: #28a745; }
+
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 1rem auto; display: none; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-<div class="container" id="upload-screen">
+<!-- Upload Screen -->
+<div class="container" id="screen-upload">
     <h1>🖨️ WinPrintBridge</h1>
-    <div class="upload-area" onclick="document.getElementById('fileInput').click()">
-        <p>Select file to print<br>(JPG, PNG, PDF)</p>
-        <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.pdf,.bmp" onchange="uploadFile()">
+
+    <div class="upload-area" id="drop-zone" onclick="document.getElementById('fileInput').click()">
+        <p>Tap to select file<br><span style="font-size: 0.9rem; color: #999">(JPG, PNG, PDF)</span></p>
+        <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.pdf,.bmp" onchange="handleFileSelect()">
     </div>
+
+    <div class="checkbox-group" id="pdf-preview-option">
+        <input type="checkbox" id="chkGeneratePreview">
+        <label for="chkGeneratePreview">Generate PDF Preview (Slower)</label>
+    </div>
+
+    <div class="status" id="upload-status"></div>
+    <div class="spinner" id="upload-spinner"></div>
 </div>
 
-<div class="container hidden" id="preview-screen">
-    <h1>Preview</h1>
-    <div id="preview-content">
+<!-- Preview Screen -->
+<div class="container hidden" id="screen-preview">
+    <h2>Print Preview</h2>
+
+    <div class="preview-box">
         <img id="preview-img" src="" alt="Preview">
-        <p id="file-name" style="margin-top: 0.5rem; color: #666;"></p>
+        <div id="no-preview-msg" class="hidden" style="color:#888;">No preview available</div>
     </div>
-    <button class="btn" id="printBtn" onclick="printFile()">🖨️ PRINT</button>
-    <button class="btn btn-secondary" onclick="reset()">CANCEL</button>
-    <p class="status" id="status-msg"></p>
+
+    <div class="controls-row">
+        <button class="icon-btn" onclick="rotate(-90)" title="Rotate Left">↺</button>
+        <button class="icon-btn" onclick="rotate(90)" title="Rotate Right">↻</button>
+    </div>
+
+    <div class="controls-row">
+        <label for="inpCopies">Copies:</label>
+        <input type="number" id="inpCopies" value="1" min="1" max="99" style="width: 60px; padding: 8px; border-radius: 6px; border: 1px solid #ccc; text-align: center;">
+    </div>
+
+    <button class="btn btn-icon" id="btnPrint" onclick="printFile()">
+        <span>🖨️ PRINT NOW</span>
+    </button>
+    <button class="btn btn-secondary" onclick="resetApp()">Cancel</button>
+
+    <div class="status" id="print-status"></div>
 </div>
 
-<div class="container">
-    <h3>⚙️ Management</h3>
-    <button class="btn btn-danger" onclick="cleanSpooler()">Clean print queue</button>
-    <button class="btn btn-danger" onclick="restartServer()">Clean print queue and reboot Windows</button>
+<!-- Management Login -->
+<div class="container" id="screen-login">
+    <h3>⚙️ Management Access</h3>
+    <button class="btn btn-secondary" id="btnShowLogin" onclick="toggleLogin()">Manage Settings</button>
+
+    <div id="login-form" class="hidden" style="margin-top: 1rem;">
+        <input type="password" id="inpPassword" placeholder="Admin Password" class="input-group" style="width: 100%; margin-bottom: 10px; padding: 10px;">
+        <button class="btn" onclick="verifyAdmin()">Login</button>
+    </div>
+</div>
+
+<!-- Management Panel -->
+<div class="container hidden" id="screen-admin">
+    <h2>⚙️ Admin Panel</h2>
+
+    <div class="input-group">
+        <label>Printer Name (Windows):</label>
+        <input type="text" id="admPrinterName">
+    </div>
+
+    <div class="checkbox-group" style="justify-content: flex-start;">
+        <input type="checkbox" id="admAutoClean">
+        <label for="admAutoClean">Auto-Clean Spooler</label>
+    </div>
+
+    <div class="input-group">
+        <label>Auto-Clean Timeout (Minutes):</label>
+        <input type="number" id="admTimeout" min="1">
+    </div>
+
+    <div class="checkbox-group" style="justify-content: flex-start;">
+        <input type="checkbox" id="admPreviewEnabled">
+        <label for="admPreviewEnabled">Enable User Previews (Global)</label>
+    </div>
+
+    <button class="btn" onclick="saveSettings()">💾 Save Settings</button>
+
+    <hr style="margin: 1.5rem 0; border-top: 1px solid #eee;">
+
+    <h3>Maintenance</h3>
+    <button class="btn btn-danger" onclick="adminAction('clean-spooler')">Force Clean Queue</button>
+    <button class="btn btn-danger" onclick="adminAction('restart-server')">Force Clean & Reboot</button>
+
+    <button class="btn btn-secondary" onclick="logoutAdmin()">Logout</button>
+    <div class="status" id="admin-status"></div>
 </div>
 
 <script>
-    let currentFileId = null;
+    // State
+    let state = {
+        fileId: null,
+        fileType: null,
+        rotation: 0,
+        adminToken: null // Storing password effectively
+    };
 
-    async function uploadFile() {
-        const input = document.getElementById('fileInput');
-        if (input.files.length === 0) return;
+    // Initialize
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js');
+    }
 
+    // UI Logic
+    function getEl(id) { return document.getElementById(id); }
+
+    async function handleFileSelect() {
+        const input = getEl('fileInput');
+        if (!input.files.length) return;
         const file = input.files[0];
+
+        getEl('upload-spinner').style.display = 'block';
+        getEl('upload-status').innerText = 'Uploading...';
+
         const formData = new FormData();
         formData.append('file', file);
 
-        document.querySelector('.upload-area p').innerText = "Uploading...";
-
         try {
-            const response = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData
-            });
+            const res = await fetch('/api/upload', { method: 'POST', body: formData });
+            if (!res.ok) throw new Error('Upload failed');
+            const data = await res.json();
 
-            if (!response.ok) throw new Error('Uploading error');
+            state.fileId = data.id;
+            state.fileType = data.type.toLowerCase();
+            state.rotation = 0;
 
-            const data = await response.json();
-            currentFileId = data.id;
+            await setupPreview(data.id, state.fileType);
 
-            showPreview(data.id, data.filename, data.type);
+            getEl('screen-upload').classList.add('hidden');
+            getEl('screen-preview').classList.remove('hidden');
         } catch (err) {
-            alert("Error: " + err.message);
-            reset();
+            getEl('upload-status').innerText = 'Error: ' + err.message;
+            getEl('upload-status').classList.add('error');
+        } finally {
+            getEl('upload-spinner').style.display = 'none';
         }
     }
 
-    function showPreview(id, filename, type) {
-        document.getElementById('upload-screen').classList.add('hidden');
-        document.getElementById('preview-screen').classList.remove('hidden');
-        document.getElementById('file-name').innerText = filename;
-        document.getElementById('status-msg').innerText = "";
-        document.getElementById('printBtn').disabled = false;
+    async function setupPreview(id, type) {
+        const img = getEl('preview-img');
+        const msg = getEl('no-preview-msg');
 
-        const img = document.getElementById('preview-img');
-        if (type.toLowerCase() === '.pdf') {
-            img.src = "/PDF_file_icon.svg";
-            img.style.height = "100px";
-            img.style.width = "auto";
+        img.src = "";
+        img.style.transform = `rotate(0deg)`;
+
+        if (type === '.pdf') {
+            const wantPreview = getEl('chkGeneratePreview').checked;
+            if (wantPreview) {
+                // Request render
+                img.classList.remove('hidden');
+                msg.classList.add('hidden');
+                img.src = `/api/render-pdf/${id}`;
+            } else {
+                img.classList.add('hidden');
+                msg.classList.remove('hidden');
+                msg.innerHTML = `<img src="/PDF_file_icon.svg" width="64"><br>PDF Document<br>(Preview disabled)`;
+            }
         } else {
+            // Image
+            img.classList.remove('hidden');
+            msg.classList.add('hidden');
             img.src = `/api/preview/${id}`;
-            img.style.height = ""; // Auto
         }
+    }
+
+    function rotate(deg) {
+        state.rotation += deg;
+        const img = getEl('preview-img');
+        img.style.transform = `rotate(${state.rotation}deg)`;
     }
 
     async function printFile() {
-        if (!currentFileId) return;
-
-        const btn = document.getElementById('printBtn');
-        const status = document.getElementById('status-msg');
+        const btn = getEl('btnPrint');
+        const status = getEl('print-status');
 
         btn.disabled = true;
-        btn.innerText = "Printing...";
-        status.innerText = "Sending to printer...";
-        status.className = "status";
+        status.innerText = 'Sending to printer...';
+        status.className = 'status';
 
         try {
-            const response = await fetch(`/api/print/${currentFileId}`, {
-                method: 'POST'
+            const res = await fetch(`/api/print/${state.fileId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    copies: parseInt(getEl('inpCopies').value) || 1,
+                    rotation: state.rotation
+                })
             });
 
-            if (!response.ok) {
-                const errText = await response.text();
-                throw new Error(errText || 'Error');
-            }
+            if (!res.ok) throw new Error(await res.text());
 
-            status.innerText = "✅ Sent to printer successfully!";
-            status.classList.add("success");
-
-            setTimeout(() => {
-                reset();
-            }, 3000);
+            status.innerText = '✅ Sent successfully!';
+            status.classList.add('success');
+            setTimeout(resetApp, 2500);
 
         } catch (err) {
-            status.innerText = "❌ Error: " + err.message;
-            status.classList.add("error");
+            status.innerText = '❌ Error: ' + err.message;
+            status.classList.add('error');
             btn.disabled = false;
-            btn.innerText = "🖨️ PRINT";
         }
     }
 
-    function reset() {
-        document.getElementById('fileInput').value = '';
-        document.querySelector('.upload-area p').innerHTML = 'Select file to print<br>(JPG, PNG, PDF)';
-        document.getElementById('upload-screen').classList.remove('hidden');
-        document.getElementById('preview-screen').classList.add('hidden');
-        currentFileId = null;
+    function resetApp() {
+        state.fileId = null;
+        state.rotation = 0;
+        getEl('fileInput').value = '';
+        getEl('upload-status').innerText = '';
+        getEl('print-status').innerText = '';
+        getEl('btnPrint').disabled = false;
+        getEl('screen-preview').classList.add('hidden');
+        getEl('screen-upload').classList.remove('hidden');
+        getEl('chkGeneratePreview').checked = false;
     }
 
-    async function cleanSpooler() {
-        if (!confirm("Are you sure to force clean print queue? It will flush all blocking and waiting printing documents.")) return;
+    // Admin Logic
+    function toggleLogin() {
+        const form = getEl('login-form');
+        form.classList.toggle('hidden');
+    }
 
+    async function verifyAdmin() {
+        const pass = getEl('inpPassword').value;
         try {
-            const response = await fetch('/api/admin/clean-spooler', { method: 'POST' });
-            if (response.ok) {
-                const data = await response.json();
-                alert(data.message);
+            const res = await fetch('/api/admin/verify', {
+                method: 'POST',
+                headers: { 'X-Admin-Password': pass }
+            });
+            if (res.ok) {
+                state.adminToken = pass;
+                loadAdminSettings();
+                getEl('screen-login').classList.add('hidden');
+                getEl('screen-upload').classList.add('hidden');
+                getEl('screen-admin').classList.remove('hidden');
             } else {
-                const err = await response.json();
-                alert("Error: " + (err.detail || err.title || "Error"));
+                alert('Invalid Password');
             }
         } catch (err) {
-            alert("Connection error: " + err.message);
+            alert('Error: ' + err.message);
         }
     }
 
-    async function restartServer() {
-        if (!confirm("Are you sure want to restart server? It will clean spooler queue (like option above) and reboot Windows.")) return;
+    async function loadAdminSettings() {
+        const res = await fetch('/api/admin/settings', {
+            headers: { 'X-Admin-Password': state.adminToken }
+        });
+        const data = await res.json();
+
+        getEl('admPrinterName').value = data.printerName;
+        getEl('admAutoClean').checked = data.autoCleanEnabled;
+        getEl('admTimeout').value = data.autoCleanTimeoutMinutes;
+        getEl('admPreviewEnabled').checked = data.previewEnabled;
+    }
+
+    async function saveSettings() {
+        const data = {
+            printerName: getEl('admPrinterName').value,
+            autoCleanEnabled: getEl('admAutoClean').checked,
+            autoCleanTimeoutMinutes: parseInt(getEl('admTimeout').value),
+            previewEnabled: getEl('admPreviewEnabled').checked
+        };
 
         try {
-            const response = await fetch('/api/admin/restart-server', { method: 'POST' });
-             if (response.ok) {
-                const data = await response.json();
-                alert(data.message);
-            } else {
-                const err = await response.json();
-                alert("Error: " + (err.detail || err.title || "Error"));
-            }
-        } catch (err) {
-            alert("Connection error: " + err.message);
-        }
+            const res = await fetch('/api/admin/settings', {
+                method: 'POST',
+                headers: {
+                    'X-Admin-Password': state.adminToken,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+            if (res.ok) alert('Settings saved!');
+            else alert('Error saving settings');
+        } catch(e) { alert('Error: ' + e.message); }
     }
+
+    async function adminAction(action) {
+        if (!confirm('Are you sure?')) return;
+        try {
+            const res = await fetch(`/api/admin/${action}`, {
+                method: 'POST',
+                headers: { 'X-Admin-Password': state.adminToken }
+            });
+            const data = await res.json();
+            alert(data.message || 'Done');
+        } catch (e) { alert('Error: ' + e.message); }
+    }
+
+    function logoutAdmin() {
+        state.adminToken = null;
+        getEl('inpPassword').value = '';
+        getEl('screen-admin').classList.add('hidden');
+        getEl('screen-login').classList.remove('hidden');
+        getEl('screen-upload').classList.remove('hidden');
+        getEl('login-form').classList.add('hidden');
+    }
+
+    // Check initial settings to toggle preview checkbox visibility?
+    // We can fetch public settings on load
+    fetch('/api/settings').then(r => r.json()).then(s => {
+        // If preview is strictly disabled globally, maybe hide the checkbox?
+        // But the requirement says "user option".
+        // We'll leave it as user option, maybe "previewEnabled" setting controls if it defaults to on?
+        // Or if it's allowed at all.
+        if (s.previewEnabled === false) {
+             getEl('pdf-preview-option').classList.add('hidden');
+             getEl('chkGeneratePreview').checked = false;
+        }
+    }).catch(() => {});
+
 </script>
-
 </body>
 </html>
