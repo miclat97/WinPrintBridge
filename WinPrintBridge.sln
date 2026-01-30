@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
 VisualStudioVersion = 18.3.11415.281
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinPrintBridge", "WinPrintServer\WinPrintBridge.csproj", "{A5DEC801-FDEE-7CC6-0502-F515B3D6CC66}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinPrintBridge", "WinPrintBridge\WinPrintBridge.csproj", "{A5DEC801-FDEE-7CC6-0502-F515B3D6CC66}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
