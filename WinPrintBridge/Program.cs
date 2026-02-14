@@ -83,16 +83,9 @@ builder.Services.AddHostedService<SpoolerCleanerService>();
 var app = builder.Build();
 
 // Open firewall port for HTTP server on startup
-try
-{
-    var firewallRuleName = $"WinPrintBridge_HTTP_Port_{port}";
-    Process.Start(new ProcessStartInfo("netsh", $"advfirewall firewall delete rule name=\"{firewallRuleName}\"") { CreateNoWindow = true, UseShellExecute = false })?.WaitForExit();
-    Process.Start(new ProcessStartInfo("netsh", $"advfirewall firewall add rule name=\"{firewallRuleName}\" dir=in action=allow protocol=TCP localport={port} profile=any") { CreateNoWindow = true, UseShellExecute = false })?.WaitForExit();
-}
-catch (Exception ex)
-{
-    Console.WriteLine($"Failed to configure firewall: {ex.Message}");
-}
+var firewallRuleName = $"WinPrintBridge_HTTP_Port_{port}";
+Process.Start(new ProcessStartInfo("netsh", $"advfirewall firewall delete rule name=\"{firewallRuleName}\"") { CreateNoWindow = true, UseShellExecute = false })?.WaitForExit();
+Process.Start(new ProcessStartInfo("netsh", $"advfirewall firewall add rule name=\"{firewallRuleName}\" dir=in action=allow protocol=TCP localport={port} profile=any") { CreateNoWindow = true, UseShellExecute = false })?.WaitForExit();
 
 app.UseDefaultFiles();
 app.UseStaticFiles();
