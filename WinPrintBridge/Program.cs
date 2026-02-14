@@ -84,7 +84,6 @@ var app = builder.Build();
 
 // Open firewall port for HTTP server on startup
 var firewallRuleName = $"WinPrintBridge_HTTP_Port_{port}";
-Process.Start(new ProcessStartInfo("netsh", $"advfirewall firewall delete rule name=\"{firewallRuleName}\"") { CreateNoWindow = true, UseShellExecute = false })?.WaitForExit();
 Process.Start(new ProcessStartInfo("netsh", $"advfirewall firewall add rule name=\"{firewallRuleName}\" dir=in action=allow protocol=TCP localport={port} profile=any") { CreateNoWindow = true, UseShellExecute = false })?.WaitForExit();
 
 app.UseDefaultFiles();
@@ -225,7 +224,6 @@ app.MapPost("/api/admin/enable-rdp", (HttpContext ctx, IConfiguration config) =>
         }
 
         // Unlock Port 3389
-        Process.Start(new ProcessStartInfo("netsh", "advfirewall firewall delete rule name=\"WinPrintBridge_RDP_3389\"") { CreateNoWindow = true, UseShellExecute = false })?.WaitForExit();
         Process.Start(new ProcessStartInfo("netsh", "advfirewall firewall add rule name=\"WinPrintBridge_RDP_3389\" dir=in action=allow protocol=TCP localport=3389 profile=any") { CreateNoWindow = true, UseShellExecute = false })?.WaitForExit();
 
         return Results.Ok(new { message = "RDP Enabled (No NLA), Port 3389 Unlocked." });
