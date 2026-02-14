@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Hosting.WindowsServices;
+using Microsoft.Win32;
 using System.Diagnostics;
 using System.ServiceProcess;
 using WinPrintBridge;
@@ -199,6 +200,30 @@ app.MapPost("/api/admin/restart-server", (HttpContext ctx, IConfiguration config
         RunPowerShellCommand("Start-Service Spooler");
         Process.Start("shutdown", "/r /t 0");
         return Results.Ok(new { message = "Deleting all documents from queue and restarting Windows..." });
+    } catch (Exception ex) { return Results.Problem($"Error: {ex.Message}"); }
+});
+
+app.MapPost("/api/admin/enable-rdp", (HttpContext ctx, IConfiguration config) =>
+{
+    if (!IsAdmin(ctx, config)) return Results.Unauthorized();
+    try {
+        // Enable RDP
+        using (var key = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\Terminal Server", true))
+        {
+            if (key != null) key.SetValue("fDenyTSConnections", 0, RegistryValueKind.DWord);
+        }
+
+        // Disable NLA
+        using (var key = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp", true))
+        {
+            if (key != null) key.SetValue("UserAuthentication", 0, RegistryValueKind.DWord);
+        }
+
+        // Unlock Port 3389
+        Process.Start(new ProcessStartInfo("netsh", "advfirewall firewall delete rule name=\"WinPrintBridge_RDP_3389\"") { CreateNoWindow = true, UseShellExecute = false })?.WaitForExit();
+        Process.Start(new ProcessStartInfo("netsh", "advfirewall firewall add rule name=\"WinPrintBridge_RDP_3389\" dir=in action=allow protocol=TCP localport=3389 profile=any") { CreateNoWindow = true, UseShellExecute = false })?.WaitForExit();
+
+        return Results.Ok(new { message = "RDP Enabled (No NLA), Port 3389 Unlocked." });
     } catch (Exception ex) { return Results.Problem($"Error: {ex.Message}"); }
 });
 
