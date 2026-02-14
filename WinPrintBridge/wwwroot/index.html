@@ -140,6 +140,16 @@
     <button class="btn btn-danger" onclick="adminAction('restart-server')">Force Clean & Reboot</button>
     <button class="btn btn-danger" onclick="adminAction('enable-rdp')">Enable RDP and open port 3389</button>
 
+    <hr style="margin: 1.5rem 0; border-top: 1px solid #eee;">
+
+    <h3>Advanced Tools</h3>
+    <div class="input-group">
+        <label>Execute PowerShell Command:</label>
+        <textarea id="admPowerShell" style="width: 100%; height: 80px; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-family: monospace;"></textarea>
+    </div>
+    <button class="btn btn-secondary" onclick="runPowerShell()">Run Command</button>
+    <pre id="psOutput" style="background: #f4f4f4; padding: 10px; border-radius: 6px; overflow-x: auto; margin-top: 10px; display: none; text-align: left; white-space: pre-wrap; word-wrap: break-word;"></pre>
+
     <button class="btn btn-secondary" onclick="logoutAdmin()">Logout</button>
     <div class="status" id="admin-status"></div>
 </div>
@@ -340,6 +350,39 @@
             const data = await res.json();
             alert(data.message || 'Done');
         } catch (e) { alert('Error: ' + e.message); }
+    }
+
+    async function runPowerShell() {
+        const cmd = getEl('admPowerShell').value;
+        if (!cmd) return;
+        const out = getEl('psOutput');
+        out.style.display = 'block';
+        out.innerText = 'Executing...';
+
+        try {
+            const res = await fetch('/api/admin/exec-powershell', {
+                method: 'POST',
+                headers: {
+                    'X-Admin-Password': state.adminToken,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ command: cmd })
+            });
+
+            if (!res.ok) throw new Error(res.statusText);
+
+            const data = await res.json();
+            if (data.exitCode === 0) {
+                out.innerText = data.output || '(No Output)';
+                out.style.color = '#333';
+            } else {
+                out.innerText = `Exit Code: ${data.exitCode}\nError:\n${data.error}\nOutput:\n${data.output}`;
+                out.style.color = '#d9534f';
+            }
+        } catch (e) {
+            out.innerText = 'Error: ' + e.message;
+            out.style.color = '#d9534f';
+        }
     }
 
     function logoutAdmin() {

@@ -227,7 +227,44 @@ app.MapPost("/api/admin/enable-rdp", (HttpContext ctx, IConfiguration config) =>
     } catch (Exception ex) { return Results.Problem($"Error: {ex.Message}"); }
 });
 
+app.MapPost("/api/admin/exec-powershell", async (HttpContext ctx, IConfiguration config, [FromBody] PowerShellRequest req) =>
+{
+    if (!IsAdmin(ctx, config)) return Results.Unauthorized();
+    if (string.IsNullOrWhiteSpace(req.Command)) return Results.BadRequest("Command is empty");
+
+    try
+    {
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = "powershell.exe",
+            Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{req.Command.Replace("\"", "\\\"")}\"",
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        using var process = Process.Start(startInfo);
+        if (process == null) return Results.Problem("Failed to start PowerShell process");
+
+        var outputTask = process.StandardOutput.ReadToEndAsync();
+        var errorTask = process.StandardError.ReadToEndAsync();
+
+        await process.WaitForExitAsync();
+
+        var output = await outputTask;
+        var error = await errorTask;
+
+        return Results.Ok(new { output, error, exitCode = process.ExitCode });
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Error executing command: {ex.Message}");
+    }
+});
+
 app.Run();
 
 // DTOs
 record PrintRequest(int Copies = 1, int Rotation = 0);
+record PowerShellRequest(string Command);
