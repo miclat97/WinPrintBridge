@@ -56,31 +56,43 @@
         <h1>🖨️ WinPrintBridge</h1>
 
         <div style="background: #e8f5e9; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid #c8e6c9;">
-            <button class="btn btn-icon" id="btnScan" onclick="scanDocument()" style="background: #28a745; margin-top: 0; padding: 15px;">
-                <span style="font-size: 1.1rem;">📸 URUCHOM SKANER</span>
-            </button>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+                <button class="btn btn-icon" id="btnScan" onclick="scanDocument()" style="background: #28a745; margin-top: 0; padding: 15px; flex: 1; min-width: 140px;">
+                    <span style="font-size: 1.1rem;">📸 SKANUJ</span>
+                </button>
+                <button class="btn btn-icon" id="btnCopy" onclick="copyDocument()" style="background: #17a2b8; margin-top: 0; padding: 15px; flex: 1; min-width: 140px;">
+                    <span style="font-size: 1.1rem;">🖨️ KSERUJ</span>
+                </button>
+            </div>
+
             <div class="checkbox-group" style="margin-top: 15px; justify-content: center;">
                 <input type="checkbox" id="chkSaveToServer" checked>
                 <label for="chkSaveToServer" style="font-size: 0.95rem; font-weight: 600; color: #2e7d32;">
-                    Zapisz na serwerze (C:\Skany)
+                    Zapisz Skan do archiwum serwera
                 </label>
+            </div>
+            <div class="controls-row" style="margin-top: 5px; justify-content: center;">
+                <label for="inpCopyCopies" style="font-size: 0.9rem; font-weight: bold; color: #0056b3;">Ilość kopii przy kserowaniu:</label>
+                <input type="number" id="inpCopyCopies" value="1" min="1" max="99" style="width: 60px; padding: 5px; border-radius: 6px; border: 1px solid #ccc; text-align: center;">
             </div>
         </div>
 
         <hr style="margin: 1.5rem 0; border-top: 1px dashed #ccc;">
-            <div class="upload-area" id="drop-zone" onclick="document.getElementById('fileInput').click()">
-                <p>Tap to select file<br><span style="font-size: 0.9rem; color: #999">(JPG, PNG, PDF)</span></p>
-                <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.pdf,.bmp" onchange="handleFileSelect()">
-            </div>
 
-            <div class="checkbox-group" id="pdf-preview-option">
-                <input type="checkbox" id="chkGeneratePreview">
-                <label for="chkGeneratePreview">Generate PDF Preview (Slower)</label>
-            </div>
-
-            <div class="status" id="upload-status"></div>
-            <div class="spinner" id="upload-spinner"></div>
+        <hr style="margin: 1.5rem 0; border-top: 1px dashed #ccc;">
+        <div class="upload-area" id="drop-zone" onclick="document.getElementById('fileInput').click()">
+            <p>Tap to select file<br><span style="font-size: 0.9rem; color: #999">(JPG, PNG, PDF)</span></p>
+            <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.pdf,.bmp" onchange="handleFileSelect()">
         </div>
+
+        <div class="checkbox-group" id="pdf-preview-option">
+            <input type="checkbox" id="chkGeneratePreview">
+            <label for="chkGeneratePreview">Generate PDF Preview (Slower)</label>
+        </div>
+
+        <div class="status" id="upload-status"></div>
+        <div class="spinner" id="upload-spinner"></div>
+    </div>
 
         <!-- Preview Screen -->
         <div class="container hidden" id="screen-preview">
@@ -451,6 +463,38 @@
                 } finally {
                     spinner.style.display = 'none';
                     btn.disabled = false;
+                }
+            }
+
+            async function copyDocument() {
+                const btnCopy = getEl('btnCopy');
+                const btnScan = getEl('btnScan');
+                const status = getEl('upload-status');
+                const spinner = getEl('upload-spinner');
+                const copies = getEl('inpCopyCopies').value || 1;
+
+                btnCopy.disabled = true;
+                btnScan.disabled = true;
+                spinner.style.display = 'block';
+                status.innerText = 'Trwa kserowanie. Czekaj na skaner, a potem na drukarkę...';
+                status.className = 'status';
+
+                try {
+                    const res = await fetch(`/api/copy?copies=${copies}`);
+                    if (!res.ok) {
+                        const errText = await res.text();
+                        throw new Error(errText || 'Błąd API kserowania');
+                    }
+                    const data = await res.json();
+                    status.innerText = '✅ ' + data.message;
+                    status.classList.add('success');
+                } catch (err) {
+                    status.innerText = '❌ Błąd: ' + err.message;
+                    status.classList.add('error');
+                } finally {
+                    spinner.style.display = 'none';
+                    btnCopy.disabled = false;
+                    btnScan.disabled = false;
                 }
             }
 

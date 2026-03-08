@@ -166,13 +166,16 @@ app.MapPost("/api/print/{id}", (string id, [FromBody] PrintRequest req, [FromSer
     catch (Exception ex) { return Results.Problem(ex.Message); }
 });
 
-app.MapGet("/api/scan", (bool saveToServer = true) =>
+// --- ENDPOINT: SKANOWANIE ---
+app.MapGet("/api/scan", (bool saveToServer, IConfiguration config) =>
 {
     string? finalFilePath = null;
     string? tempFilePath = null;
     Exception? scanException = null;
 
-    // Skanowanie w dedykowanym wątku STA
+    // Pobieramy ścieżkę z appsettings.json, domyślnie "C:\Skany" jeśli tam nic nie wpiszesz
+    string scanDirectory = config.GetValue<string>("PrintServer:ScanDirectory", @"C:\Skany");
+
     Thread staThread = new Thread(() =>
     {
         try
@@ -199,22 +202,17 @@ app.MapGet("/api/scan", (bool saveToServer = true) =>
 
             string fileName = $"Skan_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.jpg";
 
-            // Logika wyboru miejsca zapisu
             if (saveToServer)
             {
-                string targetDir = @"C:\Skany";
-                if (!Directory.Exists(targetDir)) Directory.CreateDirectory(targetDir);
-
-                finalFilePath = Path.Combine(targetDir, fileName);
+                if (!Directory.Exists(scanDirectory)) Directory.CreateDirectory(scanDirectory);
+                finalFilePath = Path.Combine(scanDirectory, fileName);
                 if (File.Exists(finalFilePath)) File.Delete(finalFilePath);
-
                 imageFile.SaveFile(finalFilePath);
             }
             else
             {
                 tempFilePath = Path.Combine(Path.GetTempPath(), fileName);
                 if (File.Exists(tempFilePath)) File.Delete(tempFilePath);
-
                 imageFile.SaveFile(tempFilePath);
             }
         }
@@ -228,15 +226,12 @@ app.MapGet("/api/scan", (bool saveToServer = true) =>
     staThread.Start();
     staThread.Join();
 
-    if (scanException != null)
-        return Results.Problem($"Błąd skanowania: {scanException.Message}");
+    if (scanException != null) return Results.Problem($"Błąd skanowania: {scanException.Message}");
 
-    // Jeśli wybraliśmy zapis na serwerze (zwraca tylko komunikat JSON)
     if (saveToServer && finalFilePath != null)
     {
-        return Results.Ok(new { message = $"Plik zapisano bezpiecznie na serwerze w C:\\Skany" });
+        return Results.Ok(new { message = $"Plik zapisano bezpiecznie na serwerze w {scanDirectory}" });
     }
-    // Jeśli wybraliśmy pobieranie na urządzenie (zwraca plik, a potem go kasuje z Temp)
     else if (!saveToServer && tempFilePath != null && File.Exists(tempFilePath))
     {
         byte[] fileBytes = System.IO.File.ReadAllBytes(tempFilePath);
@@ -245,6 +240,67 @@ app.MapGet("/api/scan", (bool saveToServer = true) =>
     }
 
     return Results.Problem("Nie udało się utworzyć pliku ze skanem.");
+});
+
+
+app.MapGet("/api/copy", (int copies, IConfiguration config, [FromServices] PrintService printService) =>
+{
+    string? scannedFilePath = null;
+    Exception? scanException = null;
+    string scanDirectory = config.GetValue<string>("PrintServer:ScanDirectory", @"C:\Skany");
+
+    Thread staThread = new Thread(() =>
+    {
+        try
+        {
+            var deviceManager = new WIA.DeviceManager();
+            WIA.DeviceInfo? scannerInfo = null;
+
+            foreach (WIA.DeviceInfo info in deviceManager.DeviceInfos)
+            {
+                if (info.Type == WIA.WiaDeviceType.ScannerDeviceType) { scannerInfo = info; break; }
+            }
+
+            if (scannerInfo == null) throw new Exception("Nie znaleziono skanera w systemie.");
+
+            var device = scannerInfo.Connect();
+            WIA.Item item = device.Items[1];
+
+            string formatJPEG = "{B96B3CAE-0728-11D3-9D7B-0000F81EF32E}";
+            var imageFile = (WIA.ImageFile)item.Transfer(formatJPEG);
+
+            if (!Directory.Exists(scanDirectory)) Directory.CreateDirectory(scanDirectory);
+
+            // Zapisujemy plik ksera dla archiwum
+            string fileName = $"Ksero_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.jpg";
+            scannedFilePath = Path.Combine(scanDirectory, fileName);
+
+            if (File.Exists(scannedFilePath)) File.Delete(scannedFilePath);
+            imageFile.SaveFile(scannedFilePath);
+        }
+        catch (Exception ex)
+        {
+            scanException = ex;
+        }
+    });
+
+    staThread.SetApartmentState(ApartmentState.STA);
+    staThread.Start();
+    staThread.Join();
+
+    if (scanException != null) return Results.Problem($"Błąd skanowania: {scanException.Message}");
+    if (scannedFilePath == null || !File.Exists(scannedFilePath)) return Results.Problem("Nie udało się zapisać skanu do druku.");
+
+    try
+    {
+        // Wywołujemy wydruk na podstawie właśnie zapisanego skanu!
+        printService.Print(scannedFilePath, copies > 0 ? copies : 1, 0);
+        return Results.Ok(new { message = $"Zeskanowano i wysłano do druku ({copies} kopii)!" });
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Zeskanowano pomyślnie, ale błąd druku: {ex.Message}");
+    }
 });
 
 // Settings / Admin
