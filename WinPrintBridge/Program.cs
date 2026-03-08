@@ -146,39 +146,128 @@ app.MapGet("/api/render-pdf/{id}", (string id, [FromServices] PrintService print
     var files = Directory.GetFiles(uploadDir, $"{id}.*");
     if (files.Length == 0) return Results.NotFound();
     var filepath = files[0];
-    try {
+    try
+    {
         var stream = printService.RenderPdfPage(filepath, 0);
         return Results.File(stream, "image/png");
-    } catch (Exception ex) { return Results.Problem(ex.Message); }
+    }
+    catch (Exception ex) { return Results.Problem(ex.Message); }
 });
 
 app.MapPost("/api/print/{id}", (string id, [FromBody] PrintRequest req, [FromServices] PrintService printService) =>
 {
     var files = Directory.GetFiles(uploadDir, $"{id}.*");
     if (files.Length == 0) return Results.NotFound();
-    try {
+    try
+    {
         printService.Print(files[0], req.Copies, req.Rotation);
         return Results.Ok(new { message = "Print job started." });
-    } catch (Exception ex) { return Results.Problem(ex.Message); }
+    }
+    catch (Exception ex) { return Results.Problem(ex.Message); }
+});
+
+app.MapGet("/api/scan", (bool saveToServer = true) =>
+{
+    string? finalFilePath = null;
+    string? tempFilePath = null;
+    Exception? scanException = null;
+
+    // Skanowanie w dedykowanym wątku STA
+    Thread staThread = new Thread(() =>
+    {
+        try
+        {
+            var deviceManager = new WIA.DeviceManager();
+            WIA.DeviceInfo? scannerInfo = null;
+
+            foreach (WIA.DeviceInfo info in deviceManager.DeviceInfos)
+            {
+                if (info.Type == WIA.WiaDeviceType.ScannerDeviceType)
+                {
+                    scannerInfo = info;
+                    break;
+                }
+            }
+
+            if (scannerInfo == null) throw new Exception("Nie znaleziono skanera w systemie.");
+
+            var device = scannerInfo.Connect();
+            WIA.Item item = device.Items[1];
+
+            string formatJPEG = "{B96B3CAE-0728-11D3-9D7B-0000F81EF32E}";
+            var imageFile = (WIA.ImageFile)item.Transfer(formatJPEG);
+
+            string fileName = $"Skan_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.jpg";
+
+            // Logika wyboru miejsca zapisu
+            if (saveToServer)
+            {
+                string targetDir = @"C:\Skany";
+                if (!Directory.Exists(targetDir)) Directory.CreateDirectory(targetDir);
+
+                finalFilePath = Path.Combine(targetDir, fileName);
+                if (File.Exists(finalFilePath)) File.Delete(finalFilePath);
+
+                imageFile.SaveFile(finalFilePath);
+            }
+            else
+            {
+                tempFilePath = Path.Combine(Path.GetTempPath(), fileName);
+                if (File.Exists(tempFilePath)) File.Delete(tempFilePath);
+
+                imageFile.SaveFile(tempFilePath);
+            }
+        }
+        catch (Exception ex)
+        {
+            scanException = ex;
+        }
+    });
+
+    staThread.SetApartmentState(ApartmentState.STA);
+    staThread.Start();
+    staThread.Join();
+
+    if (scanException != null)
+        return Results.Problem($"Błąd skanowania: {scanException.Message}");
+
+    // Jeśli wybraliśmy zapis na serwerze (zwraca tylko komunikat JSON)
+    if (saveToServer && finalFilePath != null)
+    {
+        return Results.Ok(new { message = $"Plik zapisano bezpiecznie na serwerze w C:\\Skany" });
+    }
+    // Jeśli wybraliśmy pobieranie na urządzenie (zwraca plik, a potem go kasuje z Temp)
+    else if (!saveToServer && tempFilePath != null && File.Exists(tempFilePath))
+    {
+        byte[] fileBytes = System.IO.File.ReadAllBytes(tempFilePath);
+        System.IO.File.Delete(tempFilePath);
+        return Results.File(fileBytes, "image/jpeg", Path.GetFileName(tempFilePath));
+    }
+
+    return Results.Problem("Nie udało się utworzyć pliku ze skanem.");
 });
 
 // Settings / Admin
-app.MapGet("/api/settings", ([FromServices] SettingsService ss) => {
+app.MapGet("/api/settings", ([FromServices] SettingsService ss) =>
+{
     var s = ss.GetSettings();
     return Results.Ok(new { s.PrinterName, s.PreviewEnabled });
 });
 
-app.MapPost("/api/admin/verify", (HttpContext ctx, IConfiguration config) => {
+app.MapPost("/api/admin/verify", (HttpContext ctx, IConfiguration config) =>
+{
     if (IsAdmin(ctx, config)) return Results.Ok();
     return Results.Unauthorized();
 });
 
-app.MapGet("/api/admin/settings", (HttpContext ctx, IConfiguration config, [FromServices] SettingsService ss) => {
+app.MapGet("/api/admin/settings", (HttpContext ctx, IConfiguration config, [FromServices] SettingsService ss) =>
+{
     if (!IsAdmin(ctx, config)) return Results.Unauthorized();
     return Results.Ok(ss.GetSettings());
 });
 
-app.MapPost("/api/admin/settings", (HttpContext ctx, IConfiguration config, [FromServices] SettingsService ss, [FromBody] RuntimeSettings newSettings) => {
+app.MapPost("/api/admin/settings", (HttpContext ctx, IConfiguration config, [FromServices] SettingsService ss, [FromBody] RuntimeSettings newSettings) =>
+{
     if (!IsAdmin(ctx, config)) return Results.Unauthorized();
     ss.SaveSettings(newSettings);
     return Results.Ok();
@@ -187,30 +276,35 @@ app.MapPost("/api/admin/settings", (HttpContext ctx, IConfiguration config, [Fro
 app.MapPost("/api/admin/clean-spooler", (HttpContext ctx, IConfiguration config) =>
 {
     if (!IsAdmin(ctx, config)) return Results.Unauthorized();
-    try {
+    try
+    {
         RunPowerShellCommand("Stop-Service -Name Spooler -Force");
         RunPowerShellCommand("Remove-Item \"C:\\Windows\\System32\\spool\\PRINTERS\\*\" -Force -Recurse");
         RunPowerShellCommand("Start-Service Spooler");
         return Results.Ok(new { message = "Deleted all documents from printing queue. Spooler service restarted." });
-    } catch (Exception ex) { return Results.Problem($"Error: {ex.Message}"); }
+    }
+    catch (Exception ex) { return Results.Problem($"Error: {ex.Message}"); }
 });
 
 app.MapPost("/api/admin/restart-server", (HttpContext ctx, IConfiguration config) =>
 {
     if (!IsAdmin(ctx, config)) return Results.Unauthorized();
-    try {
+    try
+    {
         RunPowerShellCommand("Stop-Service -Name Spooler -Force");
         RunPowerShellCommand("Remove-Item \"C:\\Windows\\System32\\spool\\PRINTERS\\*\" -Force -Recurse");
         RunPowerShellCommand("Start-Service Spooler");
         Process.Start("shutdown", "/r /t 0");
         return Results.Ok(new { message = "Deleting all documents from queue and restarting Windows..." });
-    } catch (Exception ex) { return Results.Problem($"Error: {ex.Message}"); }
+    }
+    catch (Exception ex) { return Results.Problem($"Error: {ex.Message}"); }
 });
 
 app.MapPost("/api/admin/enable-rdp", (HttpContext ctx, IConfiguration config) =>
 {
     if (!IsAdmin(ctx, config)) return Results.Unauthorized();
-    try {
+    try
+    {
         // Enable RDP
         using (var key = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\Terminal Server", true))
         {
@@ -227,7 +321,8 @@ app.MapPost("/api/admin/enable-rdp", (HttpContext ctx, IConfiguration config) =>
         Process.Start(new ProcessStartInfo("netsh", "advfirewall firewall add rule name=\"WinPrintBridge_RDP_3389\" dir=in action=allow protocol=TCP localport=3389 profile=any") { CreateNoWindow = true, UseShellExecute = false })?.WaitForExit();
 
         return Results.Ok(new { message = "RDP Enabled (No NLA), Port 3389 Unlocked." });
-    } catch (Exception ex) { return Results.Problem($"Error: {ex.Message}"); }
+    }
+    catch (Exception ex) { return Results.Problem($"Error: {ex.Message}"); }
 });
 
 app.MapPost("/api/admin/exec-powershell", async (HttpContext ctx, IConfiguration config, [FromBody] PowerShellRequest req) =>

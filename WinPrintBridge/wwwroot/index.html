@@ -52,361 +52,430 @@
 <body>
 
 <!-- Upload Screen -->
-<div class="container" id="screen-upload">
-    <h1>🖨️ WinPrintBridge</h1>
+    <div class="container" id="screen-upload">
+        <h1>🖨️ WinPrintBridge</h1>
 
-    <div class="upload-area" id="drop-zone" onclick="document.getElementById('fileInput').click()">
-        <p>Tap to select file<br><span style="font-size: 0.9rem; color: #999">(JPG, PNG, PDF)</span></p>
-        <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.pdf,.bmp" onchange="handleFileSelect()">
-    </div>
+        <div style="background: #e8f5e9; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid #c8e6c9;">
+            <button class="btn btn-icon" id="btnScan" onclick="scanDocument()" style="background: #28a745; margin-top: 0; padding: 15px;">
+                <span style="font-size: 1.1rem;">📸 URUCHOM SKANER</span>
+            </button>
+            <div class="checkbox-group" style="margin-top: 15px; justify-content: center;">
+                <input type="checkbox" id="chkSaveToServer" checked>
+                <label for="chkSaveToServer" style="font-size: 0.95rem; font-weight: 600; color: #2e7d32;">
+                    Zapisz na serwerze (C:\Skany)
+                </label>
+            </div>
+        </div>
 
-    <div class="checkbox-group" id="pdf-preview-option">
-        <input type="checkbox" id="chkGeneratePreview">
-        <label for="chkGeneratePreview">Generate PDF Preview (Slower)</label>
-    </div>
+        <hr style="margin: 1.5rem 0; border-top: 1px dashed #ccc;">
+            <div class="upload-area" id="drop-zone" onclick="document.getElementById('fileInput').click()">
+                <p>Tap to select file<br><span style="font-size: 0.9rem; color: #999">(JPG, PNG, PDF)</span></p>
+                <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.pdf,.bmp" onchange="handleFileSelect()">
+            </div>
 
-    <div class="status" id="upload-status"></div>
-    <div class="spinner" id="upload-spinner"></div>
-</div>
+            <div class="checkbox-group" id="pdf-preview-option">
+                <input type="checkbox" id="chkGeneratePreview">
+                <label for="chkGeneratePreview">Generate PDF Preview (Slower)</label>
+            </div>
 
-<!-- Preview Screen -->
-<div class="container hidden" id="screen-preview">
-    <h2>Print Preview</h2>
+            <div class="status" id="upload-status"></div>
+            <div class="spinner" id="upload-spinner"></div>
+        </div>
 
-    <div class="preview-box">
-        <img id="preview-img" src="" alt="Preview">
-        <div id="no-preview-msg" class="hidden" style="color:#888;">No preview available</div>
-    </div>
+        <!-- Preview Screen -->
+        <div class="container hidden" id="screen-preview">
+            <h2>Print Preview</h2>
 
-    <div class="controls-row">
-        <button class="icon-btn" onclick="rotate(-90)" title="Rotate Left">↺</button>
-        <button class="icon-btn" onclick="rotate(90)" title="Rotate Right">↻</button>
-    </div>
+            <div class="preview-box">
+                <img id="preview-img" src="" alt="Preview">
+                <div id="no-preview-msg" class="hidden" style="color:#888;">No preview available</div>
+            </div>
 
-    <div class="controls-row">
-        <label for="inpCopies">Copies:</label>
-        <input type="number" id="inpCopies" value="1" min="1" max="99" style="width: 60px; padding: 8px; border-radius: 6px; border: 1px solid #ccc; text-align: center;">
-    </div>
+            <div class="controls-row">
+                <button class="icon-btn" onclick="rotate(-90)" title="Rotate Left">↺</button>
+                <button class="icon-btn" onclick="rotate(90)" title="Rotate Right">↻</button>
+            </div>
 
-    <button class="btn btn-icon" id="btnPrint" onclick="printFile()">
-        <span>🖨️ PRINT NOW</span>
-    </button>
-    <button class="btn btn-secondary" onclick="resetApp()">Cancel</button>
+            <div class="controls-row">
+                <label for="inpCopies">Copies:</label>
+                <input type="number" id="inpCopies" value="1" min="1" max="99" style="width: 60px; padding: 8px; border-radius: 6px; border: 1px solid #ccc; text-align: center;">
+            </div>
 
-    <div class="status" id="print-status"></div>
-</div>
+            <button class="btn btn-icon" id="btnPrint" onclick="printFile()">
+                <span>🖨️ PRINT NOW</span>
+            </button>
+            <button class="btn btn-secondary" onclick="resetApp()">Cancel</button>
 
-<!-- Management Login -->
-<div class="container" id="screen-login">
-    <h3>⚙️ Management Access</h3>
-    <button class="btn btn-secondary" id="btnShowLogin" onclick="toggleLogin()">Manage Settings</button>
+            <div class="status" id="print-status"></div>
+        </div>
 
-    <div id="login-form" class="hidden" style="margin-top: 1rem;">
-        <input type="password" id="inpPassword" placeholder="Admin Password" class="input-group" style="width: 100%; margin-bottom: 10px; padding: 10px;">
-        <button class="btn" onclick="verifyAdmin()">Login</button>
-    </div>
-</div>
+        <!-- Management Login -->
+        <div class="container" id="screen-login">
+            <h3>⚙️ Management Access</h3>
+            <button class="btn btn-secondary" id="btnShowLogin" onclick="toggleLogin()">Manage Settings</button>
 
-<!-- Management Panel -->
-<div class="container hidden" id="screen-admin">
-    <h2>⚙️ Admin Panel</h2>
+            <div id="login-form" class="hidden" style="margin-top: 1rem;">
+                <input type="password" id="inpPassword" placeholder="Admin Password" class="input-group" style="width: 100%; margin-bottom: 10px; padding: 10px;">
+                <button class="btn" onclick="verifyAdmin()">Login</button>
+            </div>
+        </div>
 
-    <div class="input-group">
-        <label>Printer Name (Windows):</label>
-        <input type="text" id="admPrinterName">
-    </div>
+        <!-- Management Panel -->
+        <div class="container hidden" id="screen-admin">
+            <h2>⚙️ Admin Panel</h2>
 
-    <div class="checkbox-group" style="justify-content: flex-start;">
-        <input type="checkbox" id="admAutoClean">
-        <label for="admAutoClean">Auto-Clean Spooler</label>
-    </div>
+            <div class="input-group">
+                <label>Printer Name (Windows):</label>
+                <input type="text" id="admPrinterName">
+            </div>
 
-    <div class="input-group">
-        <label>Auto-Clean Timeout (Minutes):</label>
-        <input type="number" id="admTimeout" min="1">
-    </div>
+            <div class="checkbox-group" style="justify-content: flex-start;">
+                <input type="checkbox" id="admAutoClean">
+                <label for="admAutoClean">Auto-Clean Spooler</label>
+            </div>
 
-    <div class="checkbox-group" style="justify-content: flex-start;">
-        <input type="checkbox" id="admPreviewEnabled">
-        <label for="admPreviewEnabled">Enable User Previews (Global)</label>
-    </div>
+            <div class="input-group">
+                <label>Auto-Clean Timeout (Minutes):</label>
+                <input type="number" id="admTimeout" min="1">
+            </div>
 
-    <button class="btn" onclick="saveSettings()">💾 Save Settings</button>
+            <div class="checkbox-group" style="justify-content: flex-start;">
+                <input type="checkbox" id="admPreviewEnabled">
+                <label for="admPreviewEnabled">Enable User Previews (Global)</label>
+            </div>
 
-    <hr style="margin: 1.5rem 0; border-top: 1px solid #eee;">
+            <button class="btn" onclick="saveSettings()">💾 Save Settings</button>
 
-    <h3>Maintenance</h3>
-    <button class="btn btn-danger" onclick="adminAction('clean-spooler')">Force Clean Queue</button>
-    <button class="btn btn-danger" onclick="adminAction('restart-server')">Force Clean & Reboot</button>
-    <button class="btn btn-danger" onclick="adminAction('enable-rdp')">Enable RDP and open port 3389</button>
+            <hr style="margin: 1.5rem 0; border-top: 1px solid #eee;">
 
-    <hr style="margin: 1.5rem 0; border-top: 1px solid #eee;">
+            <h3>Maintenance</h3>
+            <button class="btn btn-danger" onclick="adminAction('clean-spooler')">Force Clean Queue</button>
+            <button class="btn btn-danger" onclick="adminAction('restart-server')">Force Clean & Reboot</button>
+            <button class="btn btn-danger" onclick="adminAction('enable-rdp')">Enable RDP and open port 3389</button>
 
-    <h3>Advanced Tools</h3>
-    <div class="input-group">
-        <label>Execute PowerShell Command:</label>
-        <textarea id="admPowerShell" style="width: 100%; height: 80px; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-family: monospace;"></textarea>
-    </div>
-    <button class="btn btn-secondary" onclick="runPowerShell()">Run Command</button>
-    <pre id="psOutput" style="background: #f4f4f4; padding: 10px; border-radius: 6px; overflow-x: auto; margin-top: 10px; display: none; text-align: left; white-space: pre-wrap; word-wrap: break-word;"></pre>
+            <hr style="margin: 1.5rem 0; border-top: 1px solid #eee;">
 
-    <button class="btn btn-secondary" onclick="logoutAdmin()">Logout</button>
-    <div class="status" id="admin-status"></div>
-</div>
+            <h3>Advanced Tools</h3>
+            <div class="input-group">
+                <label>Execute PowerShell Command:</label>
+                <textarea id="admPowerShell" style="width: 100%; height: 80px; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-family: monospace;"></textarea>
+            </div>
+            <button class="btn btn-secondary" onclick="runPowerShell()">Run Command</button>
+            <pre id="psOutput" style="background: #f4f4f4; padding: 10px; border-radius: 6px; overflow-x: auto; margin-top: 10px; display: none; text-align: left; white-space: pre-wrap; word-wrap: break-word;"></pre>
 
-<script>
-    // State
-    let state = {
-        fileId: null,
-        fileType: null,
-        rotation: 0,
-        adminToken: null // Storing password effectively
-    };
+            <button class="btn btn-secondary" onclick="logoutAdmin()">Logout</button>
+            <div class="status" id="admin-status"></div>
+        </div>
 
-    // Initialize
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js');
-    }
+        <script>
+            // State
+            let state = {
+                fileId: null,
+                fileType: null,
+                rotation: 0,
+                adminToken: null // Storing password effectively
+            };
 
-    // UI Logic
-    function getEl(id) { return document.getElementById(id); }
-
-    async function handleFileSelect() {
-        const input = getEl('fileInput');
-        if (!input.files.length) return;
-        const file = input.files[0];
-
-        getEl('upload-spinner').style.display = 'block';
-        getEl('upload-status').innerText = 'Uploading...';
-
-        const formData = new FormData();
-        formData.append('file', file);
-
-        try {
-            const res = await fetch('/api/upload', { method: 'POST', body: formData });
-            if (!res.ok) throw new Error('Upload failed');
-            const data = await res.json();
-
-            state.fileId = data.id;
-            state.fileType = data.type.toLowerCase();
-            state.rotation = 0;
-
-            await setupPreview(data.id, state.fileType);
-
-            getEl('screen-upload').classList.add('hidden');
-            getEl('screen-preview').classList.remove('hidden');
-        } catch (err) {
-            getEl('upload-status').innerText = 'Error: ' + err.message;
-            getEl('upload-status').classList.add('error');
-        } finally {
-            getEl('upload-spinner').style.display = 'none';
-        }
-    }
-
-    async function setupPreview(id, type) {
-        const img = getEl('preview-img');
-        const msg = getEl('no-preview-msg');
-
-        img.src = "";
-        img.style.transform = `rotate(0deg)`;
-
-        if (type === '.pdf') {
-            const wantPreview = getEl('chkGeneratePreview').checked;
-            if (wantPreview) {
-                // Request render
-                img.classList.remove('hidden');
-                msg.classList.add('hidden');
-                img.src = `/api/render-pdf/${id}`;
-            } else {
-                img.classList.add('hidden');
-                msg.classList.remove('hidden');
-                msg.innerHTML = `<img src="/PDF_file_icon.svg" width="64"><br>PDF Document<br>(Preview disabled)`;
+            // Initialize
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js');
             }
-        } else {
-            // Image
-            img.classList.remove('hidden');
-            msg.classList.add('hidden');
-            img.src = `/api/preview/${id}`;
-        }
-    }
 
-    function rotate(deg) {
-        state.rotation += deg;
-        const img = getEl('preview-img');
-        img.style.transform = `rotate(${state.rotation}deg)`;
-    }
+            // UI Logic
+            function getEl(id) { return document.getElementById(id); }
 
-    async function printFile() {
-        const btn = getEl('btnPrint');
-        const status = getEl('print-status');
+            async function handleFileSelect() {
+                const input = getEl('fileInput');
+                if (!input.files.length) return;
+                const file = input.files[0];
 
-        btn.disabled = true;
-        status.innerText = 'Sending to printer...';
-        status.className = 'status';
+                getEl('upload-spinner').style.display = 'block';
+                getEl('upload-status').innerText = 'Uploading...';
 
-        try {
-            const res = await fetch(`/api/print/${state.fileId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    copies: parseInt(getEl('inpCopies').value) || 1,
-                    rotation: state.rotation
-                })
-            });
+                const formData = new FormData();
+                formData.append('file', file);
 
-            if (!res.ok) throw new Error(await res.text());
+                try {
+                    const res = await fetch('/api/upload', { method: 'POST', body: formData });
+                    if (!res.ok) throw new Error('Upload failed');
+                    const data = await res.json();
 
-            status.innerText = '✅ Sent successfully!';
-            status.classList.add('success');
-            setTimeout(resetApp, 2500);
+                    state.fileId = data.id;
+                    state.fileType = data.type.toLowerCase();
+                    state.rotation = 0;
 
-        } catch (err) {
-            status.innerText = '❌ Error: ' + err.message;
-            status.classList.add('error');
-            btn.disabled = false;
-        }
-    }
+                    await setupPreview(data.id, state.fileType);
 
-    function resetApp() {
-        state.fileId = null;
-        state.rotation = 0;
-        getEl('fileInput').value = '';
-        getEl('upload-status').innerText = '';
-        getEl('print-status').innerText = '';
-        getEl('btnPrint').disabled = false;
-        getEl('screen-preview').classList.add('hidden');
-        getEl('screen-upload').classList.remove('hidden');
-        getEl('chkGeneratePreview').checked = false;
-    }
-
-    // Admin Logic
-    function toggleLogin() {
-        const form = getEl('login-form');
-        form.classList.toggle('hidden');
-    }
-
-    async function verifyAdmin() {
-        const pass = getEl('inpPassword').value;
-        try {
-            const res = await fetch('/api/admin/verify', {
-                method: 'POST',
-                headers: { 'X-Admin-Password': pass }
-            });
-            if (res.ok) {
-                state.adminToken = pass;
-                loadAdminSettings();
-                getEl('screen-login').classList.add('hidden');
-                getEl('screen-upload').classList.add('hidden');
-                getEl('screen-admin').classList.remove('hidden');
-            } else {
-                alert('Invalid Password');
+                    getEl('screen-upload').classList.add('hidden');
+                    getEl('screen-preview').classList.remove('hidden');
+                } catch (err) {
+                    getEl('upload-status').innerText = 'Error: ' + err.message;
+                    getEl('upload-status').classList.add('error');
+                } finally {
+                    getEl('upload-spinner').style.display = 'none';
+                }
             }
-        } catch (err) {
-            alert('Error: ' + err.message);
-        }
-    }
 
-    async function loadAdminSettings() {
-        const res = await fetch('/api/admin/settings', {
-            headers: { 'X-Admin-Password': state.adminToken }
-        });
-        const data = await res.json();
+            async function setupPreview(id, type) {
+                const img = getEl('preview-img');
+                const msg = getEl('no-preview-msg');
 
-        getEl('admPrinterName').value = data.printerName;
-        getEl('admAutoClean').checked = data.autoCleanEnabled;
-        getEl('admTimeout').value = data.autoCleanTimeoutMinutes;
-        getEl('admPreviewEnabled').checked = data.previewEnabled;
-    }
+                img.src = "";
+                img.style.transform = `rotate(0deg)`;
 
-    async function saveSettings() {
-        const data = {
-            printerName: getEl('admPrinterName').value,
-            autoCleanEnabled: getEl('admAutoClean').checked,
-            autoCleanTimeoutMinutes: parseInt(getEl('admTimeout').value),
-            previewEnabled: getEl('admPreviewEnabled').checked
-        };
-
-        try {
-            const res = await fetch('/api/admin/settings', {
-                method: 'POST',
-                headers: {
-                    'X-Admin-Password': state.adminToken,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            });
-            if (res.ok) alert('Settings saved!');
-            else alert('Error saving settings');
-        } catch(e) { alert('Error: ' + e.message); }
-    }
-
-    async function adminAction(action) {
-        if (!confirm('Are you sure?')) return;
-        try {
-            const res = await fetch(`/api/admin/${action}`, {
-                method: 'POST',
-                headers: { 'X-Admin-Password': state.adminToken }
-            });
-            const data = await res.json();
-            alert(data.message || 'Done');
-        } catch (e) { alert('Error: ' + e.message); }
-    }
-
-    async function runPowerShell() {
-        const cmd = getEl('admPowerShell').value;
-        if (!cmd) return;
-        const out = getEl('psOutput');
-        out.style.display = 'block';
-        out.innerText = 'Executing...';
-
-        try {
-            const res = await fetch('/api/admin/exec-powershell', {
-                method: 'POST',
-                headers: {
-                    'X-Admin-Password': state.adminToken,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ command: cmd })
-            });
-
-            if (!res.ok) throw new Error(res.statusText);
-
-            const data = await res.json();
-            if (data.exitCode === 0) {
-                out.innerText = data.output || '(No Output)';
-                out.style.color = '#333';
-            } else {
-                out.innerText = `Exit Code: ${data.exitCode}\nError:\n${data.error}\nOutput:\n${data.output}`;
-                out.style.color = '#d9534f';
+                if (type === '.pdf') {
+                    const wantPreview = getEl('chkGeneratePreview').checked;
+                    if (wantPreview) {
+                        // Request render
+                        img.classList.remove('hidden');
+                        msg.classList.add('hidden');
+                        img.src = `/api/render-pdf/${id}`;
+                    } else {
+                        img.classList.add('hidden');
+                        msg.classList.remove('hidden');
+                        msg.innerHTML = `<img src="/PDF_file_icon.svg" width="64"><br>PDF Document<br>(Preview disabled)`;
+                    }
+                } else {
+                    // Image
+                    img.classList.remove('hidden');
+                    msg.classList.add('hidden');
+                    img.src = `/api/preview/${id}`;
+                }
             }
-        } catch (e) {
-            out.innerText = 'Error: ' + e.message;
-            out.style.color = '#d9534f';
-        }
-    }
 
-    function logoutAdmin() {
-        state.adminToken = null;
-        getEl('inpPassword').value = '';
-        getEl('screen-admin').classList.add('hidden');
-        getEl('screen-login').classList.remove('hidden');
-        getEl('screen-upload').classList.remove('hidden');
-        getEl('login-form').classList.add('hidden');
-    }
+            function rotate(deg) {
+                state.rotation += deg;
+                const img = getEl('preview-img');
+                img.style.transform = `rotate(${state.rotation}deg)`;
+            }
 
-    // Check initial settings to toggle preview checkbox visibility?
-    // We can fetch public settings on load
-    fetch('/api/settings').then(r => r.json()).then(s => {
-        // If preview is strictly disabled globally, maybe hide the checkbox?
-        // But the requirement says "user option".
-        // We'll leave it as user option, maybe "previewEnabled" setting controls if it defaults to on?
-        // Or if it's allowed at all.
-        if (s.previewEnabled === false) {
-             getEl('pdf-preview-option').classList.add('hidden');
-             getEl('chkGeneratePreview').checked = false;
-        }
-    }).catch(() => {});
+            async function printFile() {
+                const btn = getEl('btnPrint');
+                const status = getEl('print-status');
 
-</script>
+                btn.disabled = true;
+                status.innerText = 'Sending to printer...';
+                status.className = 'status';
+
+                try {
+                    const res = await fetch(`/api/print/${state.fileId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            copies: parseInt(getEl('inpCopies').value) || 1,
+                            rotation: state.rotation
+                        })
+                    });
+
+                    if (!res.ok) throw new Error(await res.text());
+
+                    status.innerText = '✅ Sent successfully!';
+                    status.classList.add('success');
+                    setTimeout(resetApp, 2500);
+
+                } catch (err) {
+                    status.innerText = '❌ Error: ' + err.message;
+                    status.classList.add('error');
+                    btn.disabled = false;
+                }
+            }
+
+            function resetApp() {
+                state.fileId = null;
+                state.rotation = 0;
+                getEl('fileInput').value = '';
+                getEl('upload-status').innerText = '';
+                getEl('print-status').innerText = '';
+                getEl('btnPrint').disabled = false;
+                getEl('screen-preview').classList.add('hidden');
+                getEl('screen-upload').classList.remove('hidden');
+                getEl('chkGeneratePreview').checked = false;
+            }
+
+            // Admin Logic
+            function toggleLogin() {
+                const form = getEl('login-form');
+                form.classList.toggle('hidden');
+            }
+
+            async function verifyAdmin() {
+                const pass = getEl('inpPassword').value;
+                try {
+                    const res = await fetch('/api/admin/verify', {
+                        method: 'POST',
+                        headers: { 'X-Admin-Password': pass }
+                    });
+                    if (res.ok) {
+                        state.adminToken = pass;
+                        loadAdminSettings();
+                        getEl('screen-login').classList.add('hidden');
+                        getEl('screen-upload').classList.add('hidden');
+                        getEl('screen-admin').classList.remove('hidden');
+                    } else {
+                        alert('Invalid Password');
+                    }
+                } catch (err) {
+                    alert('Error: ' + err.message);
+                }
+            }
+
+            async function loadAdminSettings() {
+                const res = await fetch('/api/admin/settings', {
+                    headers: { 'X-Admin-Password': state.adminToken }
+                });
+                const data = await res.json();
+
+                getEl('admPrinterName').value = data.printerName;
+                getEl('admAutoClean').checked = data.autoCleanEnabled;
+                getEl('admTimeout').value = data.autoCleanTimeoutMinutes;
+                getEl('admPreviewEnabled').checked = data.previewEnabled;
+            }
+
+            async function saveSettings() {
+                const data = {
+                    printerName: getEl('admPrinterName').value,
+                    autoCleanEnabled: getEl('admAutoClean').checked,
+                    autoCleanTimeoutMinutes: parseInt(getEl('admTimeout').value),
+                    previewEnabled: getEl('admPreviewEnabled').checked
+                };
+
+                try {
+                    const res = await fetch('/api/admin/settings', {
+                        method: 'POST',
+                        headers: {
+                            'X-Admin-Password': state.adminToken,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(data)
+                    });
+                    if (res.ok) alert('Settings saved!');
+                    else alert('Error saving settings');
+                } catch (e) { alert('Error: ' + e.message); }
+            }
+
+            async function adminAction(action) {
+                if (!confirm('Are you sure?')) return;
+                try {
+                    const res = await fetch(`/api/admin/${action}`, {
+                        method: 'POST',
+                        headers: { 'X-Admin-Password': state.adminToken }
+                    });
+                    const data = await res.json();
+                    alert(data.message || 'Done');
+                } catch (e) { alert('Error: ' + e.message); }
+            }
+
+            async function runPowerShell() {
+                const cmd = getEl('admPowerShell').value;
+                if (!cmd) return;
+                const out = getEl('psOutput');
+                out.style.display = 'block';
+                out.innerText = 'Executing...';
+
+                try {
+                    const res = await fetch('/api/admin/exec-powershell', {
+                        method: 'POST',
+                        headers: {
+                            'X-Admin-Password': state.adminToken,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ command: cmd })
+                    });
+
+                    if (!res.ok) throw new Error(res.statusText);
+
+                    const data = await res.json();
+                    if (data.exitCode === 0) {
+                        out.innerText = data.output || '(No Output)';
+                        out.style.color = '#333';
+                    } else {
+                        out.innerText = `Exit Code: ${data.exitCode}\nError:\n${data.error}\nOutput:\n${data.output}`;
+                        out.style.color = '#d9534f';
+                    }
+                } catch (e) {
+                    out.innerText = 'Error: ' + e.message;
+                    out.style.color = '#d9534f';
+                }
+            }
+
+            async function scanDocument() {
+                const btn = getEl('btnScan');
+                const status = getEl('upload-status');
+                const spinner = getEl('upload-spinner');
+                const saveToServer = getEl('chkSaveToServer').checked; // Sprawdzamy co wybrał user
+
+                btn.disabled = true;
+                spinner.style.display = 'block';
+                status.innerText = 'Trwa skanowanie. Czekaj na ruch maszyny...';
+                status.className = 'status';
+
+                try {
+                    // Przekazujemy parametr saveToServer do API
+                    const res = await fetch(`/api/scan?saveToServer=${saveToServer}`);
+
+                    if (!res.ok) {
+                        const errText = await res.text();
+                        throw new Error(errText || 'Błąd API skanera');
+                    }
+
+                    if (saveToServer) {
+                        // Jeśli zapisaliśmy na dysk serwera, API zwraca tylko tekstowego JSONa
+                        const data = await res.json();
+                        status.innerText = '✅ ' + data.message;
+                    } else {
+                        // Jeśli pobieramy na telefon, API zwraca binarny plik
+                        let filename = "Skan.jpg";
+                        const disposition = res.headers.get('Content-Disposition');
+                        if (disposition && disposition.indexOf('attachment') !== -1) {
+                            const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);
+                            if (matches != null && matches[1]) filename = matches[1].replace(/['"]/g, '');
+                        }
+
+                        const blob = await res.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = url;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+
+                        window.URL.revokeObjectURL(url);
+                        status.innerText = '✅ Zeskanowano i pobrano na to urządzenie!';
+                    }
+                    status.classList.add('success');
+
+                } catch (err) {
+                    status.innerText = '❌ Błąd: ' + err.message;
+                    status.classList.add('error');
+                } finally {
+                    spinner.style.display = 'none';
+                    btn.disabled = false;
+                }
+            }
+
+            function logoutAdmin() {
+                state.adminToken = null;
+                getEl('inpPassword').value = '';
+                getEl('screen-admin').classList.add('hidden');
+                getEl('screen-login').classList.remove('hidden');
+                getEl('screen-upload').classList.remove('hidden');
+                getEl('login-form').classList.add('hidden');
+            }
+
+            // Check initial settings to toggle preview checkbox visibility?
+            // We can fetch public settings on load
+            fetch('/api/settings').then(r => r.json()).then(s => {
+                // If preview is strictly disabled globally, maybe hide the checkbox?
+                // But the requirement says "user option".
+                // We'll leave it as user option, maybe "previewEnabled" setting controls if it defaults to on?
+                // Or if it's allowed at all.
+                if (s.previewEnabled === false) {
+                    getEl('pdf-preview-option').classList.add('hidden');
+                    getEl('chkGeneratePreview').checked = false;
+                }
+            }).catch(() => { });
+
+        </script>
 </body>
 </html>
