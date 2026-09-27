@@ -7,51 +7,250 @@
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0078d4">
     <style>
-        :root { --primary: #0078d4; --bg: #f0f2f5; --card: #fff; --text: #333; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 1rem; box-sizing: border-box; color: var(--text); }
-        .container { background: var(--card); padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 600px; text-align: center; margin-bottom: 1.5rem; transition: all 0.3s ease; }
-        h1 { margin: 0 0 1.5rem 0; color: var(--primary); font-size: 1.8rem; }
-        h2 { margin: 0 0 1rem 0; color: #555; font-size: 1.4rem; }
-        h3 { margin: 0 0 1rem 0; color: #555; font-size: 1.2rem; }
+        :root {
+            --primary: #0078d4;
+            --bg: #f0f2f5;
+            --card: #fff;
+            --text: #333;
+        }
 
-        .upload-area { border: 2px dashed #ccc; padding: 3rem 1rem; border-radius: 8px; cursor: pointer; transition: 0.2s; margin-bottom: 1rem; position: relative; }
-        .upload-area:hover, .upload-area.dragover { border-color: var(--primary); background: #f0f8ff; }
-        .upload-area p { margin: 0; font-size: 1.1rem; color: #666; pointer-events: none; }
-        input[type="file"] { display: none; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+            box-sizing: border-box;
+            color: var(--text);
+        }
 
-        .btn { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; width: 100%; font-weight: 600; margin-top: 1rem; transition: background 0.2s; }
-        .btn:hover { filter: brightness(1.1); }
-        .btn:disabled { background: #ccc; cursor: not-allowed; }
-        .btn-secondary { background: #666; }
-        .btn-danger { background: #d9534f; }
-        .btn-icon { width: auto; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+        .container {
+            background: var(--card);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
 
-        .controls-row { display: flex; gap: 10px; justify-content: center; margin: 1rem 0; align-items: center; }
-        .icon-btn { background: #eee; border: none; padding: 10px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
-        .icon-btn:hover { background: #ddd; }
+        h1 {
+            margin: 0 0 1.5rem 0;
+            color: var(--primary);
+            font-size: 1.8rem;
+        }
 
-        .preview-box { margin: 1rem 0; padding: 10px; background: #fafafa; border-radius: 8px; overflow: hidden; position: relative; min-height: 200px; display: flex; align-items: center; justify-content: center; }
-        #preview-img { max-width: 100%; max-height: 400px; transition: transform 0.3s ease; transform-origin: center center; }
+        h2 {
+            margin: 0 0 1rem 0;
+            color: #555;
+            font-size: 1.4rem;
+        }
 
-        .input-group { margin: 1rem 0; text-align: left; }
-        .input-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.9rem; }
-        .input-group input[type="text"], .input-group input[type="number"], .input-group input[type="password"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 1rem; }
-        .checkbox-group { display: flex; align-items: center; gap: 10px; margin: 1rem 0; justify-content: center; }
-        .checkbox-group input { width: 20px; height: 20px; cursor: pointer; }
-        .checkbox-group label { cursor: pointer; }
+        h3 {
+            margin: 0 0 1rem 0;
+            color: #555;
+            font-size: 1.2rem;
+        }
 
-        .hidden { display: none !important; }
-        .status { margin-top: 1rem; font-weight: bold; min-height: 1.5em; }
-        .error { color: #d9534f; }
-        .success { color: #28a745; }
+        .upload-area {
+            border: 2px dashed #ccc;
+            padding: 3rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-bottom: 1rem;
+            position: relative;
+        }
 
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 1rem auto; display: none; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+            .upload-area:hover, .upload-area.dragover {
+                border-color: var(--primary);
+                background: #f0f8ff;
+            }
+
+            .upload-area p {
+                margin: 0;
+                font-size: 1.1rem;
+                color: #666;
+                pointer-events: none;
+            }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            width: 100%;
+            font-weight: 600;
+            margin-top: 1rem;
+            transition: background 0.2s;
+        }
+
+            .btn:hover {
+                filter: brightness(1.1);
+            }
+
+            .btn:disabled {
+                background: #ccc;
+                cursor: not-allowed;
+            }
+
+        .btn-secondary {
+            background: #666;
+        }
+
+        .btn-danger {
+            background: #d9534f;
+        }
+
+        .btn-icon {
+            width: auto;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 1rem 0;
+            align-items: center;
+        }
+
+        .icon-btn {
+            background: #eee;
+            border: none;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+            .icon-btn:hover {
+                background: #ddd;
+            }
+
+        .preview-box {
+            margin: 1rem 0;
+            padding: 10px;
+            background: #fafafa;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #preview-img {
+            max-width: 100%;
+            max-height: 400px;
+            transition: transform 0.3s ease;
+            transform-origin: center center;
+        }
+
+        .input-group {
+            margin: 1rem 0;
+            text-align: left;
+        }
+
+            .input-group label {
+                display: block;
+                margin-bottom: 0.5rem;
+                font-weight: 600;
+                font-size: 0.9rem;
+            }
+
+            .input-group input[type="text"], .input-group input[type="number"], .input-group input[type="password"] {
+                width: 100%;
+                padding: 10px;
+                border: 1px solid #ccc;
+                border-radius: 6px;
+                box-sizing: border-box;
+                font-size: 1rem;
+            }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 1rem 0;
+            justify-content: center;
+        }
+
+            .checkbox-group input {
+                width: 20px;
+                height: 20px;
+                cursor: pointer;
+            }
+
+            .checkbox-group label {
+                cursor: pointer;
+            }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .status {
+            margin-top: 1rem;
+            font-weight: bold;
+            min-height: 1.5em;
+        }
+
+        .error {
+            color: #d9534f;
+        }
+
+        .success {
+            color: #28a745;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 1rem auto;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
     </style>
 </head>
 <body>
 
-<!-- Upload Screen -->
+    <!-- Upload Screen -->
     <div class="container" id="screen-upload">
         <h1>🖨️ WinPrintBridge</h1>
 
@@ -85,101 +284,97 @@
             <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.pdf,.bmp" onchange="handleFileSelect()">
         </div>
 
-        <div class="checkbox-group" id="pdf-preview-option">
-            <input type="checkbox" id="chkGeneratePreview">
-            <label for="chkGeneratePreview">Generate PDF Preview (Slower)</label>
-        </div>
 
         <div class="status" id="upload-status"></div>
         <div class="spinner" id="upload-spinner"></div>
     </div>
 
-        <!-- Preview Screen -->
-        <div class="container hidden" id="screen-preview">
-            <h2>Print Preview</h2>
+    <!-- Preview Screen -->
+    <div class="container hidden" id="screen-preview">
+        <h2>Print Preview</h2>
 
-            <div class="preview-box">
-                <img id="preview-img" src="" alt="Preview">
-                <div id="no-preview-msg" class="hidden" style="color:#888;">No preview available</div>
-            </div>
-
-            <div class="controls-row">
-                <button class="icon-btn" onclick="rotate(-90)" title="Rotate Left">↺</button>
-                <button class="icon-btn" onclick="rotate(90)" title="Rotate Right">↻</button>
-            </div>
-
-            <div class="controls-row">
-                <label for="inpCopies">Copies:</label>
-                <input type="number" id="inpCopies" value="1" min="1" max="99" style="width: 60px; padding: 8px; border-radius: 6px; border: 1px solid #ccc; text-align: center;">
-            </div>
-
-            <button class="btn btn-icon" id="btnPrint" onclick="printFile()">
-                <span>🖨️ PRINT NOW</span>
-            </button>
-            <button class="btn btn-secondary" onclick="resetApp()">Cancel</button>
-
-            <div class="status" id="print-status"></div>
+        <div class="preview-box">
+            <img id="preview-img" src="" alt="Preview">
+            <div id="no-preview-msg" class="hidden" style="color:#888;">No preview available</div>
         </div>
 
-        <!-- Management Login -->
-        <div class="container" id="screen-login">
-            <h3>⚙️ Management Access</h3>
-            <button class="btn btn-secondary" id="btnShowLogin" onclick="toggleLogin()">Manage Settings</button>
-
-            <div id="login-form" class="hidden" style="margin-top: 1rem;">
-                <input type="password" id="inpPassword" placeholder="Admin Password" class="input-group" style="width: 100%; margin-bottom: 10px; padding: 10px;">
-                <button class="btn" onclick="verifyAdmin()">Login</button>
-            </div>
+        <div class="controls-row">
+            <button class="icon-btn" onclick="rotate(-90)" title="Rotate Left">↺</button>
+            <button class="icon-btn" onclick="rotate(90)" title="Rotate Right">↻</button>
         </div>
 
-        <!-- Management Panel -->
-        <div class="container hidden" id="screen-admin">
-            <h2>⚙️ Admin Panel</h2>
-
-            <div class="input-group">
-                <label>Printer Name (Windows):</label>
-                <input type="text" id="admPrinterName">
-            </div>
-
-            <div class="checkbox-group" style="justify-content: flex-start;">
-                <input type="checkbox" id="admAutoClean">
-                <label for="admAutoClean">Auto-Clean Spooler</label>
-            </div>
-
-            <div class="input-group">
-                <label>Auto-Clean Timeout (Minutes):</label>
-                <input type="number" id="admTimeout" min="1">
-            </div>
-
-            <div class="checkbox-group" style="justify-content: flex-start;">
-                <input type="checkbox" id="admPreviewEnabled">
-                <label for="admPreviewEnabled">Enable User Previews (Global)</label>
-            </div>
-
-            <button class="btn" onclick="saveSettings()">💾 Save Settings</button>
-
-            <hr style="margin: 1.5rem 0; border-top: 1px solid #eee;">
-
-            <h3>Maintenance</h3>
-            <button class="btn btn-danger" onclick="adminAction('clean-spooler')">Force Clean Queue</button>
-            <button class="btn btn-danger" onclick="adminAction('restart-server')">Force Clean & Reboot</button>
-            <button class="btn btn-danger" onclick="adminAction('enable-rdp')">Enable RDP and open port 3389</button>
-
-            <hr style="margin: 1.5rem 0; border-top: 1px solid #eee;">
-
-            <h3>Advanced Tools</h3>
-            <div class="input-group">
-                <label>Execute PowerShell Command:</label>
-                <textarea id="admPowerShell" style="width: 100%; height: 80px; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-family: monospace;"></textarea>
-            </div>
-            <button class="btn btn-secondary" onclick="runPowerShell()">Run Command</button>
-            <pre id="psOutput" style="background: #f4f4f4; padding: 10px; border-radius: 6px; overflow-x: auto; margin-top: 10px; display: none; text-align: left; white-space: pre-wrap; word-wrap: break-word;"></pre>
-
-            <button class="btn btn-secondary" onclick="logoutAdmin()">Logout</button>
-            <div class="status" id="admin-status"></div>
+        <div class="controls-row">
+            <label for="inpCopies">Copies:</label>
+            <input type="number" id="inpCopies" value="1" min="1" max="99" style="width: 60px; padding: 8px; border-radius: 6px; border: 1px solid #ccc; text-align: center;">
         </div>
 
-        <script>
+        <button class="btn btn-icon" id="btnPrint" onclick="printFile()">
+            <span>🖨️ PRINT NOW</span>
+        </button>
+        <button class="btn btn-secondary" onclick="resetApp()">Cancel</button>
+
+        <div class="status" id="print-status"></div>
+    </div>
+
+    <!-- Management Login -->
+    <div class="container" id="screen-login">
+        <h3>⚙️ Management Access</h3>
+        <button class="btn btn-secondary" id="btnShowLogin" onclick="toggleLogin()">Manage Settings</button>
+
+        <div id="login-form" class="hidden" style="margin-top: 1rem;">
+            <input type="password" id="inpPassword" placeholder="Admin Password" class="input-group" style="width: 100%; margin-bottom: 10px; padding: 10px;">
+            <button class="btn" onclick="verifyAdmin()">Login</button>
+        </div>
+    </div>
+
+    <!-- Management Panel -->
+    <div class="container hidden" id="screen-admin">
+        <h2>⚙️ Admin Panel</h2>
+
+        <div class="input-group">
+            <label>Printer Name (Windows):</label>
+            <input type="text" id="admPrinterName">
+        </div>
+
+        <div class="checkbox-group" style="justify-content: flex-start;">
+            <input type="checkbox" id="admAutoClean">
+            <label for="admAutoClean">Auto-Clean Spooler</label>
+        </div>
+
+        <div class="input-group">
+            <label>Auto-Clean Timeout (Minutes):</label>
+            <input type="number" id="admTimeout" min="1">
+        </div>
+
+        <div class="checkbox-group" style="justify-content: flex-start;">
+            <input type="checkbox" id="admPreviewEnabled">
+            <label for="admPreviewEnabled">Enable User Previews (Global)</label>
+        </div>
+
+        <button class="btn" onclick="saveSettings()">💾 Save Settings</button>
+
+        <hr style="margin: 1.5rem 0; border-top: 1px solid #eee;">
+
+        <h3>Maintenance</h3>
+        <button class="btn btn-danger" onclick="adminAction('clean-spooler')">Force Clean Queue</button>
+        <button class="btn btn-danger" onclick="adminAction('restart-server')">Force Clean & Reboot</button>
+        <button class="btn btn-danger" onclick="adminAction('enable-rdp')">Enable RDP and open port 3389</button>
+
+        <hr style="margin: 1.5rem 0; border-top: 1px solid #eee;">
+
+        <h3>Advanced Tools</h3>
+        <div class="input-group">
+            <label>Execute PowerShell Command:</label>
+            <textarea id="admPowerShell" style="width: 100%; height: 80px; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-family: monospace;"></textarea>
+        </div>
+        <button class="btn btn-secondary" onclick="runPowerShell()">Run Command</button>
+        <pre id="psOutput" style="background: #f4f4f4; padding: 10px; border-radius: 6px; overflow-x: auto; margin-top: 10px; display: none; text-align: left; white-space: pre-wrap; word-wrap: break-word;"></pre>
+
+        <button class="btn btn-secondary" onclick="logoutAdmin()">Logout</button>
+        <div class="status" id="admin-status"></div>
+    </div>
+
+    <script>
             // State
             let state = {
                 fileId: null,
@@ -236,7 +431,7 @@
                 img.style.transform = `rotate(0deg)`;
 
                 if (type === '.pdf') {
-                    const wantPreview = getEl('chkGeneratePreview').checked;
+                    const wantPreview = true;
                     if (wantPreview) {
                         // Request render
                         img.classList.remove('hidden');
@@ -301,7 +496,7 @@
                 getEl('btnPrint').disabled = false;
                 getEl('screen-preview').classList.add('hidden');
                 getEl('screen-upload').classList.remove('hidden');
-                getEl('chkGeneratePreview').checked = true;
+                getEl('chkGeneratePreview').checked = false;
             }
 
             // Admin Logic
@@ -397,9 +592,13 @@
                     if (!res.ok) throw new Error(res.statusText);
 
                     const data = await res.json();
-                    
-                    out.innerText = data.output || '(No Output)';
-                    out.style.color = '#333';
+                    if (data.exitCode === 0) {
+                        out.innerText = data.output || '(No Output)';
+                        out.style.color = '#333';
+                    } else {
+                        out.innerText = `Exit Code: ${data.exitCode}\nError:\n${data.error}\nOutput:\n${data.output}`;
+                        out.style.color = '#d9534f';
+                    }
                 } catch (e) {
                     out.innerText = 'Error: ' + e.message;
                     out.style.color = '#d9534f';
@@ -410,7 +609,7 @@
                 const btn = getEl('btnScan');
                 const status = getEl('upload-status');
                 const spinner = getEl('upload-spinner');
-                const saveToServer = true; // Sprawdzamy co wybrał user
+                const saveToServer = true;
 
                 btn.disabled = true;
                 spinner.style.display = 'block';
@@ -516,6 +715,6 @@
                 }
             }).catch(() => { });
 
-        </script>
+    </script>
 </body>
 </html>

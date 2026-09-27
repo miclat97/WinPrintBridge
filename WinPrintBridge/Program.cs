@@ -107,10 +107,7 @@ void RunPowerShellCommand(string command)
         RedirectStandardOutput = true,
         RedirectStandardError = true,
         UseShellExecute = false,
-        CreateNoWindow = true,
-        StandardOutputEncoding = System.Text.Encoding.UTF8,
-        StandardInputEncoding = System.Text.Encoding.UTF8,
-        StandardErrorEncoding = System.Text.Encoding.UTF8
+        CreateNoWindow = true
     };
     using var process = Process.Start(startInfo);
     process?.WaitForExit();
