@@ -73,8 +73,10 @@ var builder = WebApplication.CreateBuilder(options);
 
 builder.Host.UseWindowsService();
 
-var port = builder.Configuration.GetValue<int>("PrintServer:Port", 5000);
-builder.WebHost.UseUrls($"http://*:{port}");
+var port = builder.Configuration.GetValue<int>("PrintServer:Port", 80);
+var domainName = builder.Configuration.GetValue<string>("PrintServer:Domainname", "print.local");
+string[] hostnamesUrls = new string[] { $"http://localhost:{port}", $"http://*:{port}", $"http://{domainName}:{port}" };
+builder.WebHost.UseUrls(hostnamesUrls);
 
 builder.Services.AddSingleton<SettingsService>();
 builder.Services.AddSingleton<PrintService>();
@@ -103,7 +105,10 @@ void RunPowerShellCommand(string command)
         RedirectStandardOutput = true,
         RedirectStandardError = true,
         UseShellExecute = false,
-        CreateNoWindow = true
+        CreateNoWindow = true,
+        StandardOutputEncoding = System.Text.Encoding.UTF8,
+        StandardInputEncoding = System.Text.Encoding.UTF8,
+        StandardErrorEncoding = System.Text.Encoding.UTF8
     };
     using var process = Process.Start(startInfo);
     process?.WaitForExit();
@@ -235,7 +240,7 @@ app.MapGet("/api/scan", (bool saveToServer, IConfiguration config) =>
     else if (!saveToServer && tempFilePath != null && File.Exists(tempFilePath))
     {
         byte[] fileBytes = System.IO.File.ReadAllBytes(tempFilePath);
-        System.IO.File.Delete(tempFilePath);
+        //System.IO.File.Delete(tempFilePath);
         return Results.File(fileBytes, "image/jpeg", Path.GetFileName(tempFilePath));
     }
 

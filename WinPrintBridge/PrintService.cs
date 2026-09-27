@@ -121,7 +121,7 @@ namespace WinPrintBridge
                  }
 
                  // Render page to bitmap
-                 using var image = document.Render(currentPage, 300, 300, PdfRenderFlags.CorrectFromDpi);
+                 using var image = document.Render(currentPage, 600, 600, PdfRenderFlags.CorrectFromDpi);
 
                  ProcessAndDrawImage(image, e, rotation);
 
@@ -160,9 +160,11 @@ namespace WinPrintBridge
             RotateFlipType rotateType = RotateFlipType.RotateNoneFlipNone;
             switch (rotation % 360)
             {
+                case 0: rotateType = RotateFlipType.RotateNoneFlipNone; break;
                 case 90: rotateType = RotateFlipType.Rotate90FlipNone; break;
                 case 180: rotateType = RotateFlipType.Rotate180FlipNone; break;
                 case 270: rotateType = RotateFlipType.Rotate270FlipNone; break;
+                default: rotateType = RotateFlipType.RotateNoneFlipNone; break; 
             }
 
             if (rotateType != RotateFlipType.RotateNoneFlipNone)
@@ -185,7 +187,7 @@ namespace WinPrintBridge
             // Just fit best we can.
 
             // Calculate scaling
-            float imageRatio = (float)image.Width / image.Height;
+            float imageRatio = (float)image.Width / (float)image.Height;
             float containerRatio = m.Width / m.Height;
 
             float width, height;

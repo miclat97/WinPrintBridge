@@ -301,7 +301,7 @@
                 getEl('btnPrint').disabled = false;
                 getEl('screen-preview').classList.add('hidden');
                 getEl('screen-upload').classList.remove('hidden');
-                getEl('chkGeneratePreview').checked = false;
+                getEl('chkGeneratePreview').checked = true;
             }
 
             // Admin Logic
@@ -397,13 +397,9 @@
                     if (!res.ok) throw new Error(res.statusText);
 
                     const data = await res.json();
-                    if (data.exitCode === 0) {
-                        out.innerText = data.output || '(No Output)';
-                        out.style.color = '#333';
-                    } else {
-                        out.innerText = `Exit Code: ${data.exitCode}\nError:\n${data.error}\nOutput:\n${data.output}`;
-                        out.style.color = '#d9534f';
-                    }
+                    
+                    out.innerText = data.output || '(No Output)';
+                    out.style.color = '#333';
                 } catch (e) {
                     out.innerText = 'Error: ' + e.message;
                     out.style.color = '#d9534f';
@@ -414,7 +410,7 @@
                 const btn = getEl('btnScan');
                 const status = getEl('upload-status');
                 const spinner = getEl('upload-spinner');
-                const saveToServer = getEl('chkSaveToServer').checked; // Sprawdzamy co wybrał user
+                const saveToServer = true; // Sprawdzamy co wybrał user
 
                 btn.disabled = true;
                 spinner.style.display = 'block';
