@@ -74,9 +74,11 @@ var builder = WebApplication.CreateBuilder(options);
 builder.Host.UseWindowsService();
 
 var port = builder.Configuration.GetValue<int>("PrintServer:Port", 80);
-var domainName = builder.Configuration.GetValue<string>("PrintServer:Domainname", "print.local");
-string[] hostnamesUrls = new string[] { $"http://localhost:{port}", $"http://*:{port}", $"http://{domainName}:{port}" };
-builder.WebHost.UseUrls(hostnamesUrls);
+
+// Zmienna 'port' zostaje, resztę poniżej usuwamy:
+// var domainName = builder.Configuration.GetValue<string>("PrintServer:Domainname", "print.local");
+// string[] hostnamesUrls = new string[] { $"http://localhost:{port}", $"http://*:{port}", $"http://{domainName}:{port}" };
+// builder.WebHost.UseUrls(hostnamesUrls);
 
 builder.Services.AddSingleton<SettingsService>();
 builder.Services.AddSingleton<PrintService>();

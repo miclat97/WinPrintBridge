@@ -67,4 +67,10 @@
     </Content>
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="pdfium.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
